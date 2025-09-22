@@ -1,0 +1,29 @@
+{
+    "configurations": [
+        {
+            "name": "Zephyr",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+            "dotConfig": "${workspaceFolder}/build/zephyr/.config",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "browse": {
+                "path": [
+                    "${workspaceFolder}"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            },
+            "includePath": [
+                "${default}",
+                "${workspaceFolder}/zephyr/include",
+                "${workspaceFolder}/build/zephyr/include/generated",
+                "${workspaceFolder}/modules/hal/espressif/components/xtensa/esp32/include",
+                "${workspaceFolder}/modules/hal/espressif/components/xtensa/include",
+                "/opt/toolchains/zephyr-sdk-0.16.8/xtensa-espressif_esp32_zephyr-elf/picolibc/include",
+                "${workspaceFolder}/zephyr_sdk/app_hsdp_req/src",
+                "${workspaceFolder}/zephyr/include/zephyr/posix"
+            ]
+        }
+    ],
+    "version": 4,
+    "enableConfigurationSquiggles": true
+}

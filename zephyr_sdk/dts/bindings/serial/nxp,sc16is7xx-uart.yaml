@@ -1,0 +1,46 @@
+description: |
+    sc16is7xx has one or more UART, and one or more GPIO
+
+    Example:
+    sc16is7xx@48 {
+      reg = <0x48>;
+      ...
+      regulators {
+        compatible = "nordic,sc16is7xx-uart";
+
+        UART0 {
+          /* all properties for UART0 */
+        };
+        UART1 {
+          /* all properties for UART1 */
+        };
+      };
+    };
+
+compatible: "nxp,sc16is7xx-uart"
+
+# include: base.yaml
+
+# child-binding:
+#   include:
+#     - name: uart-controller.yaml
+#       property-allowlist:
+#         - clock-frequency
+#         - current-speed
+#         - hw-flow-control
+#         - parity
+#         - stop-bits
+#         - data-bits
+
+include: uart-controller.yaml
+
+properties:
+  channel:
+    type: int
+    description: |
+      Sets the number of data bits.
+    enum:
+      - 0
+      - 1
+
+on-bus: nxp,sc16is7xx

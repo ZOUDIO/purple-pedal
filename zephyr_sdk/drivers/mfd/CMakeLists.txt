@@ -1,0 +1,5 @@
+# out of tree driver is amended to zephyr's existing drivers/mfd library
+zephyr_library_amend()
+zephyr_library_sources_ifdef(CONFIG_MFD_SC16IS7XX mfd_sc16is7xx.c)
+zephyr_library_sources_ifdef(CONFIG_MFD_SC16IS7XX_BUS_I2C mfd_sc16is7xx_i2c.c)
+zephyr_library_sources_ifdef(CONFIG_MFD_SC16IS7XX_BUS_SPI mfd_sc16is7xx_spi.c)

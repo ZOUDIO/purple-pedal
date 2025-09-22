@@ -1,0 +1,59 @@
+{
+  "name": "purple_pedal_zephyr_sdk",
+  "build": {
+    "context": "..",
+    "dockerfile": "Dockerfile"
+  },
+  
+  //see details of cap-add: https://docs.docker.com/engine/containers/run/
+  //"runArgs": ["-v", "/dev:/dev", "--privileged"], //this is needed to have full device access so JLink works correctly.
+  "containerEnv": {
+    "DISPLAY": "${localEnv:DISPLAY}",
+  },
+  "remoteEnv": {
+      "DOCKER_BUILDKIT": "0", 
+  },
+  "runArgs": [
+    "-v",
+    "/dev:/dev",
+    "--device-cgroup-rule=a 188:* rmw",
+    "--device-cgroup-rule=a 166:* rmw",
+    "--cap-add=NET_ADMIN",
+    "--volume=/tmp/.X11-unix:/tmp/.X11-unix",
+  ],
+  //"image": "ghcr.io/zephyrproject-rtos/zephyr-build:latest",
+  
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workdir,type=bind,consistency=delegated",
+  "workspaceFolder": "/workdir",
+  
+  //"mounts": [
+  //  "source=${localWorkspaceFolder},target=/workdir,type=bind,consistency=cached"
+    //"source=${localWorkspaceFolderBasename},target=/workdir,type=volume"
+  //],
+  //"postCreateCommand": "sudo chown user /workdir",
+  //"postCreateCommand": "cd /workdir && west init -l zephyr_sdk && west update",
+  
+  //refer to: https://github.com/project-chip/connectedhomeip/blob/master/.devcontainer/devcontainer.json
+  "customizations": {
+    "vscode": {
+      "settings": {
+				"terminal.integrated.defaultProfile.linux" : "bash",
+				"extensions.ignoreRecommendations": true
+			},
+        // Add the IDs of extensions you want installed when the container is created in the array below.
+        "extensions": [
+          "ms-vscode.cmake-tools",
+          "ms-vscode.cpptools",
+          "ms-vscode.cpptools-extension-pack",
+          "augustocdias.tasks-shell-input",
+          "mcu-debug.debug-tracker-vscode",
+          "josetr.cmake-language-support-vscode",
+          "nordic-semiconductor.nrf-devicetree",
+          "ms-vscode-remote.remote-containers",
+          "nordic-semiconductor.nrf-kconfig",
+          "marus25.cortex-debug",
+          "strictdoc.strictdoc"
+        ]
+    }
+  }
+}

@@ -1,0 +1,15 @@
+/* overlay created for Nucleo-F767ZI mounted on base board*/
+///dts-v1/;
+
+/ {
+	example_sensor: example-sensor {
+		compatible = "zephyr,example-sensor";
+		input-gpios = <&gpio0 27 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+	};
+
+	blink_led: blink-led {
+		compatible = "blink-gpio-led";
+		led-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
+		blink-period-ms = <1000>;
+	};
+};

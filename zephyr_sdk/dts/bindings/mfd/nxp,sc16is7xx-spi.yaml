@@ -1,0 +1,5 @@
+description: NXP SC16IS7xx SPI to UART
+
+compatible: "nxp,sc16is7xx"
+
+include: ["spi-device.yaml", "nxp,sc16is7xx-common.yaml"]

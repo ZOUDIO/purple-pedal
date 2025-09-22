@@ -1,0 +1,33 @@
+description: SC16IS7XX common properties
+
+properties:
+# common properties that applies at the chip level,
+# properties at UART level is put into nxp,sc16is7xx-uart.yaml
+
+#     reg-shift:
+#       type: int
+#       required: true
+#       description: quantity to shift the register offsets by (3 for the sc16is7xx)
+
+#     config:
+#       type: int
+#       required: false
+#       description: |
+#         Value of the configuration register
+
+  interrupt-gpios:
+     type: phandle-array
+     required: false
+     description: Interrupt GPIO pin (active-low open-drain)
+
+  reset-gpios:
+    type: phandle-array
+    required: false
+    description: Reset GPIO pin (active-low open-drain)
+
+  clock-frequency:
+    type: int
+    required: true
+    description: Clock frequency of SC16IS7XX
+
+bus: nxp,sc16is7xx

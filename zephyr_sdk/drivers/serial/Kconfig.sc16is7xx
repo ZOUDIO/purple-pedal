@@ -1,0 +1,18 @@
+config UART_SC16IS7XX
+	bool "SC16IS7XX UART driver"
+	default y
+	depends on DT_HAS_NXP_SC16IS7XX_UART_ENABLED
+	select MFD
+	help
+	  Enable the SC16IS7XX UART driver.
+
+config UART_SC16IS7XX_INIT_PRIORITY
+	int "SC16IS7XX UART initialization priority"
+	default MFD_SC16IS7XX_INIT_PRIORITY
+	depends on UART_SC16IS7XX
+	help
+	  Multi-function device initialization priority for SC16IS7XX.
+
+if UART_SC16IS7XX
+
+endif # SC16IS7XX

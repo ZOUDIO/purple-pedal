@@ -1,0 +1,7 @@
+if SERIAL
+
+# zephyr-keep-sorted-start
+rsource "Kconfig.sc16is7xx"
+# zephyr-keep-sorted-stop
+
+endif # SERIAL

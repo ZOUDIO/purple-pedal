@@ -1,0 +1,77 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+        {
+            "label": "Build LOCAL sample",
+            "type": "shell",
+            "group": "build",
+            "command": "west",
+            "args": [
+                "build",
+                "${workspaceFolder}/zephyr_sdk/${input:sample-proj-local}",
+                "-p",
+                "auto",
+                "-b",
+                "${input:board}"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Flash with JLink",
+            "type": "shell",
+            "group": "build",
+            "command": "west",
+            "args": [
+                "flash",
+                "-r",
+                "jlink"
+            ],
+            "problemMatcher": []
+        }
+	],
+	"inputs": [
+		// TODO: make this dynamic (selected or open file)
+		{
+			"id": "sample-proj",
+			"type": "command",
+			"command": "shellCommand.execute",
+			"args": {
+				"command": "ls -1 -d [^.]*/ | cut -f1 -d'/'",
+				"cwd": "${workspaceFolder}/../zephyr/samples/basic/",
+			},
+		},
+
+		{
+			"id": "sample-proj-local",
+			"type": "command",
+			"command": "shellCommand.execute",
+			"args": {
+				"command": "ls -1 -d app*/ | cut -f1 -d'/'",
+				"cwd": "${workspaceFolder}/zephyr_sdk",
+			},
+		},
+        {
+			"id": "board",
+			"type": "pickString",
+			"description": "See https://docs.zephyrproject.org/latest/boards/index.html",
+			"default": "native_sim/native/64",
+			"options": [
+				"tn_esp32_ublox/esp32/procpu",
+				"tn_gm02s_esp32/esp32/procpu",
+				"tn_gm02s_stm32/stm32f767xx",
+                "tn_nrf52833/nrf52833",
+				"tn_stm32wb55",
+				"pm_stm32f4_eth",
+				"pn_stm32wb55",
+				"nucleo_f767zi",
+				"cc3235sf_launchxl",
+				"cc26x2r1_launchxl",
+				"native_sim/native/64",
+				"addon_esp32c6",
+				"esp32c3_devkitm",
+				"nrf52840dk/nrf52840",
+				"esp32_devkitc_wroom/esp32/procpu"
+			]
+		}
+    ]
+}

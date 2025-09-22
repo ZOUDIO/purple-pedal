@@ -1,0 +1,10 @@
+# Copyright (c) 2021 Legrand North America, LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Out of tree libraries"
+
+rsource "custom/Kconfig"
+
+rsource "p1meter/Kconfig"
+
+endmenu

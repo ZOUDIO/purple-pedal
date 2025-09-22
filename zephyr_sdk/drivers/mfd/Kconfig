@@ -1,0 +1,3 @@
+if MFD
+rsource "Kconfig.sc16is7xx"
+endif # MFD

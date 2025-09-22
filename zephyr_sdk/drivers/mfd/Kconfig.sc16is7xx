@@ -1,0 +1,31 @@
+menuconfig MFD_SC16IS7XX
+	bool "SC16IS7XX multi-function device driver"
+	default y
+	depends on DT_HAS_NXP_SC16IS7XX_ENABLED
+	# select I2C if $(dt_compat_on_bus,$(DT_COMPAT_NXP_SC16IS7XX),i2c)
+	# select SPI if $(dt_compat_on_bus,$(DT_COMPAT_NXP_SC16IS7XX),spi)
+	help
+	  Enable the SC16IS7XX multi-function device driver.
+
+config MFD_SC16IS7XX_INIT_PRIORITY
+	int "SC16IS7XX MFD initialization priority"
+	default MFD_INIT_PRIORITY
+	depends on MFD_SC16IS7XX
+	help
+	  Multi-function device initialization priority for SC16IS7XX.
+
+if MFD_SC16IS7XX
+
+config MFD_SC16IS7XX_BUS_I2C
+	bool "SC16IS7XX I2C bus support"
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_NXP_SC16IS7XX),i2c)
+	depends on I2C
+
+config MFD_SC16IS7XX_BUS_SPI
+	bool "SC16IS7XX SPI bus support"
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_NXP_SC16IS7XX),spi)
+	depends on SPI
+
+endif # MFD_SC16IS7XX

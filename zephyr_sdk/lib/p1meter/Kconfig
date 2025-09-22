@@ -1,0 +1,7 @@
+# Copyright (c) 2021, Legrand North America, LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+config P1_METER
+	bool "Support for P1 meter protocol"
+	help
+	  This option enables the P1 meter protocol support

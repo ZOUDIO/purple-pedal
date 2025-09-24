@@ -1,0 +1,22 @@
+identifier: purple_pedal
+name: Purple Pedal
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - counter
+  - dma
+  - gpio
+  - i2c
+  - pwm
+  - rtc
+  - spi
+  - watchdog
+  - usb_device
+  - usbd
+ram: 128
+flash: 24
+vendor: zoudio

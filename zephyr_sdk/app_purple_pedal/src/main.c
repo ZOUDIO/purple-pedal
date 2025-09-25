@@ -11,7 +11,37 @@
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
-static const uint8_t hid_report_desc[] = HID_KEYBOARD_REPORT_DESC();
+/**
+ * @brief Simple HID Gamepad report descriptor.
+ */
+#define HID_GAMEPAD_REPORT_DESC() {				\
+	HID_USAGE_PAGE(HID_USAGE_GEN_DESKTOP),		\
+	HID_USAGE(HID_USAGE_GEN_DESKTOP_GAMEPAD),	\
+	HID_COLLECTION(HID_COLLECTION_APPLICATION),	\
+		HID_USAGE_PAGE(HID_USAGE_GEN_DESKTOP),	\
+		/* Axis Usage of X, Y, Z */				\
+		HID_USAGE(0x30), \
+		HID_USAGE(0x31), \
+		HID_USAGE(0x32), \
+		HID_LOGICAL_MIN16(0x00, 0x00),	\
+		HID_LOGICAL_MAX16(0xff, 0x7f),	\
+		HID_REPORT_SIZE(16),	\
+		HID_REPORT_COUNT(3),	\
+		/*   Input (Data,Var,Abs)*/\
+		HID_INPUT(0x02),		\
+	HID_END_COLLECTION,			\
+}
+//TODO: add usage page LED and LED outputs. see HUT doc section 11 LED Page.
+
+struct __packed gamepad_report_out{
+	int16_t x_axis;
+	int16_t y_axis;
+	int16_t z_axis;
+};
+
+#define GAMEPAD_REPORT_OUT_LEN sizeof(struct gamepad_report_out)
+
+static const uint8_t hid_report_desc[] = HID_GAMEPAD_REPORT_DESC();
 
 USBD_DEVICE_DEFINE(dfu_usbd, DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)), 0x2fe3, 0xffff);
 USBD_DESC_LANG_DEFINE(sample_lang);
@@ -24,7 +54,6 @@ static const uint8_t attributes = (IS_ENABLED(CONFIG_SAMPLE_USBD_SELF_POWERED) ?
 				   USB_SCD_REMOTE_WAKEUP : 0);
 /* Full speed configuration */
 USBD_CONFIGURATION_DEFINE(sample_fs_config,attributes,CONFIG_SAMPLE_USBD_MAX_POWER, &fs_cfg_desc);
-
 /* High speed configuration */
 USBD_CONFIGURATION_DEFINE(sample_hs_config,attributes,CONFIG_SAMPLE_USBD_MAX_POWER, &hs_cfg_desc);
 

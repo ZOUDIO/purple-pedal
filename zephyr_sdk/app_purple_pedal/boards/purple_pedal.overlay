@@ -1,0 +1,47 @@
+#include <zephyr/dt-bindings/adc/ad7124-adc.h>
+/ {
+	hid_dev_0: hid_dev_0 {
+		compatible = "zephyr,hid-device";
+		label = "HID0";
+		protocol-code = "none";
+		in-report-size = <64>;
+		in-polling-period-us = <1000>;
+	};
+
+	aliases {
+		pedal-adc = &adc_ad7124;
+	};
+};
+
+
+&adc_ad7124 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+    //pin definitions in zephyr/dt-bindings/adc/ad7124-adc.h
+    //matches datasheet table 74: https://www.analog.com/media/en/technical-documentation/data-sheets/AD7124-4.pdf
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <AD7124_ADC_AIN0>; 
+        zephyr,input-negative = <AD7124_ADC_AIN1>;
+	};
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <AD7124_ADC_AIN2>; 
+        zephyr,input-negative = <AD7124_ADC_AIN3>;
+	};
+    channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <AD7124_ADC_AIN4>; 
+        zephyr,input-negative = <AD7124_ADC_AIN5>;
+	};
+};

@@ -1,7 +1,12 @@
 /dts-v1/;
-#include <st/c0/stm32c071Xb.dtsi>
-#include <st/c0/stm32c071rbtx-pinctrl.dtsi>
+#include <st/g0/stm32g0b0Xe.dtsi>
+#include <st/g0/stm32g0b0cetx-pinctrl.dtsi>
+// #include <st/g0/stm32g0b1Xe.dtsi>
+// #include <st/g0/stm32g0b1r(b-c-e)tx-pinctrl.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+
+//#include <zephyr/dt-bindings/clock/stm32g0_b1x_c1x_clock.h>
+//change to STM32G0B0CET6 
 
 / {
 	model = "Purple pedal board";
@@ -12,9 +17,18 @@
 		zephyr,shell-uart = &usart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-        zephyr,uart-mcumgr = &cdc_acm_uart0;
+        //zephyr,uart-mcumgr = &cdc_acm_uart0;
         zephyr,code-partition = &slot0_partition;
 	};
+
+	// clocks {
+	// 	clk_hsi48: clk-hsi48 {
+	// 		#clock-cells = <0>;
+	// 		compatible = "st,stm32-hsi48-clock";
+	// 		clock-frequency = <DT_FREQ_M(48)>;
+	// 		status = "okay";
+	// 	};
+	// };
 
 	leds: leds {
 		compatible = "gpio-leds";
@@ -60,27 +74,28 @@
 	};
 };
 
-&clk_lse {
-	status = "okay";
-};
-
-&clk_hse {
-	clock-frequency = <DT_FREQ_M(48)>;
-	status = "okay";
-};
-
+//use internal 16MHz RC oscillator
 &clk_hsi {
 	status = "okay";
 };
 
-// &clk_hsi48 {
+// &clk_lsi {
 // 	status = "okay";
-// 	crs-usb-sof;
 // };
 
+&pll {
+	div-m = <1>;
+	mul-n = <12>;// 16x12=192MHz
+	div-p = <4>;
+	div-q = <4>; // PLL/Q=48MHz
+	div-r = <3>; // PLL/R=64MHz
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
 &rcc {
-	clocks = <&clk_hse>;
-	clock-frequency = <DT_FREQ_M(48)>;
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(64)>;
 	ahb-prescaler = <1>;
 	apb1-prescaler = <1>;
 };
@@ -99,7 +114,7 @@
 	pinctrl-names = "default";
     cs-gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
 	status = "okay";
-    test_spi_ad7124: ad7124@0 {
+    adc_ad7124: ad7124@0 {
 	    compatible = "adi,ad7124-adc";
 	    reg = <0x0>;
 	    spi-max-frequency = <0>;
@@ -113,9 +128,6 @@ zephyr_udc0: &usb {
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
 	pinctrl-names = "default";
 	status = "okay";
-	cdc_acm_uart0: cdc_acm_uart0 {
-		compatible = "zephyr,cdc-acm-uart";
-	};
 };
 
 &flash0 {
@@ -126,31 +138,24 @@ zephyr_udc0: &usb {
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 DT_SIZE_K(32)>;
+			reg = <0x00000000 DT_SIZE_K(48)>;
 			read-only;
 		};
 
-		/*
-		 * The flash sectors 2&3 at 0x00008000 and ending at
-		 * 0x0000ffff
-		 */
-		slot0_partition: partition@8000 {
+		slot0_partition: partition@C000 {
 			label = "image-0";
-			reg = <0x00008000 DT_SIZE_K(48)>;
+			reg = <0x0000C000 DT_SIZE_K(200)>;
 		};
 
-		/*
-		 * The flash sectors 4 at 0x00010000 and ending at
-		 * 0x001ffff
-		 */
-		slot1_partition: partition@10000 {
+		slot1_partition: partition@3E000 {
 			label = "image-1";
-			reg = <0x00010000 DT_SIZE_K(48)>;
+			reg = <0x0003E000 DT_SIZE_K(200)>;
 		};
 
-		// scratch_partition: partition@18000 {
-		// 	label = "image-scratch";
-		// 	reg = <0x00018000 DT_SIZE_K(16)>;
-		// };
+		/* final 64KiB reserved for app storage partition */
+		storage_partition: partition@70000 {
+			label = "storage";
+			reg = <0x00070000 DT_SIZE_K(64)>;
+		};
 	};
 };

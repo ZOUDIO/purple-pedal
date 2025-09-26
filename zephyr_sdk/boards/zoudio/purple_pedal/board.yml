@@ -3,4 +3,5 @@ board:
   full_name: Purple Pedal
   vendor: zoudio
   socs:
-    - name: stm32c071xx
+    # - name: stm32g0b1xx
+    - name: stm32g0b0xx

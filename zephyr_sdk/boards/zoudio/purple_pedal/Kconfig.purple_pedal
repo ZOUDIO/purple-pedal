@@ -2,4 +2,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_PURPLE_PEDAL
-	select SOC_STM32C071XX
+	#select SOC_STM32G0B1XX
+	select SOC_STM32G0B0XX

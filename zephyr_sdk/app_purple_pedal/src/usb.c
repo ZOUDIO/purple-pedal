@@ -6,12 +6,13 @@
 #include <zephyr/usb/class/usbd_dfu.h>
 #include <zephyr/storage/disk_access.h>
 #include <zephyr/dfu/mcuboot.h>
+#include <zephyr/zbus/zbus.h>
 
 #include "common.h"
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(usb, CONFIG_APP_LOG_LEVEL);
 
 /**
  * @brief Simple HID Gamepad report descriptor.
@@ -27,7 +28,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 		HID_USAGE(0xC4), \
 		HID_USAGE(0xC5), \
 		HID_USAGE(0xC6), \
-		HID_LOGICAL_MIN16(0x00, 0x00),	\
+		HID_LOGICAL_MIN16(0x00, 0x80),	\
 		HID_LOGICAL_MAX16(0xff, 0x7f),	\
 		HID_REPORT_SIZE(16),	\
 		HID_REPORT_COUNT(3),	\
@@ -37,11 +38,6 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 }
 //TODO: add usage page LED and LED outputs. see HUT doc section 11 LED Page.
 
-struct __packed gamepad_report_out{
-	int16_t x_axis;
-	int16_t y_axis;
-	int16_t z_axis;
-};
 
 #define GAMEPAD_REPORT_OUT_LEN sizeof(struct gamepad_report_out)
 
@@ -180,6 +176,18 @@ static void switch_to_dfu_mode(struct usbd_context *const ctx)
 	}
 }
 
+static void gamepad_report_usb_cb(const struct zbus_channel *chan)
+{
+	const struct gamepad_report_out *rpt = zbus_chan_const_msg(chan);
+
+	LOG_INF("gamepad report: accelerator = %d, brake = %d, clutch = %d",rpt->accelerator, rpt->brake, rpt->clutch);
+
+	//TODO: send out the gamepad report
+	//int err = hid_device_submit_report(hid_dev, sizeof(struct gamepad_report_out), report);
+
+}
+
+ZBUS_LISTENER_DEFINE(gp_rpt_usb_handler, gamepad_report_usb_cb);
 
 int app_usb_init(void)
 {

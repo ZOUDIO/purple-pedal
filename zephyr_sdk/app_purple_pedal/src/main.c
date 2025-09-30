@@ -20,5 +20,6 @@ ZBUS_CHAN_DEFINE(gamepad_adc_ctrl_chan,  /* Name */
 
 int main(void)
 {
+	app_adc_init();
     app_usb_init();
 }

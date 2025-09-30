@@ -19,6 +19,7 @@ struct __packed gamepad_report_out{
 
 typedef int (*gamepad_sample_ready_callback)(void);
 
+int app_adc_init(void);
 int app_usb_init(void);
 
 #ifdef __cplusplus

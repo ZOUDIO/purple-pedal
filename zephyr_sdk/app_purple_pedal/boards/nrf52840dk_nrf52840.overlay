@@ -1,3 +1,26 @@
+
+&pinctrl {
+	pwm0_default: pwm0_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 22)>,
+				<NRF_PSEL(PWM_OUT1, 0, 23)>,
+				<NRF_PSEL(PWM_OUT2, 0, 24)>;
+			nordic,invert;
+		};
+	};
+
+	pwm0_sleep: pwm0_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 22)>,
+				<NRF_PSEL(PWM_OUT1, 0, 23)>,
+				<NRF_PSEL(PWM_OUT2, 0, 24)>;
+			low-power-enable;
+		};
+	};
+
+};
+
+
 / {
 	hid_dev_0: hid_dev_0 {
 		compatible = "zephyr,hid-device";
@@ -7,8 +30,29 @@
 		in-polling-period-us = <1000>;
 	};
 
+	/delete-node/ pwmleds;
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0_green: pwm_led_0 {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "Green PWM LED 0";
+		};
+
+		pwm_led1_red: pwm_led_1 {
+			pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "Red PWM LED 1";
+		};
+
+		pwm_led2_blue: pwm_led_2 {
+			pwms = <&pwm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "Blue PWM LED 2";
+		};
+	};
+
 	aliases {
 		pedal-adc = &adc;
+		pwm-led0 = &pwm_led0_green;
 	};
 };
 

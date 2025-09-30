@@ -57,9 +57,17 @@ USBD_CONFIGURATION_DEFINE(sample_fs_config,attributes,CONFIG_SAMPLE_USBD_MAX_POW
 /* High speed configuration */
 USBD_CONFIGURATION_DEFINE(sample_hs_config,attributes,CONFIG_SAMPLE_USBD_MAX_POWER, &hs_cfg_desc);
 
+ZBUS_CHAN_DECLARE(gamepad_adc_ctrl_chan);
 static void gamepad_iface_ready(const struct device *dev, const bool ready)
 {
-	//TODO: here we can turn adc front-end on and off
+	//here we turn adc front-end on and off
+	LOG_DBG("iface status: %d", ready);
+	int err;
+	const enum app_adc_action action = ready ? APP_ADC_ACTION_START : APP_ADC_ACTION_STOP;
+	err = zbus_chan_pub(&gamepad_adc_ctrl_chan, &action, K_MSEC(10));
+	if(err){
+		LOG_ERR("zbus_chan_pub() returns %d", err);
+	}
 }
 
 static int gamepad_get_report(const struct device *dev,const uint8_t type, const uint8_t id, const uint16_t len,uint8_t *const buf)
@@ -68,7 +76,7 @@ static int gamepad_get_report(const struct device *dev,const uint8_t type, const
 	return 0;
 }
 
-struct hid_device_ops kb_ops = {
+struct hid_device_ops gampepad_ops = {
 	.iface_ready = gamepad_iface_ready,
 	.get_report = gamepad_get_report,
 	.set_report = NULL,
@@ -201,7 +209,7 @@ int app_usb_init(void)
 		return -EIO;
 	}
 
-	ret = hid_device_register(hid_dev,hid_report_desc, sizeof(hid_report_desc),&kb_ops);
+	ret = hid_device_register(hid_dev,hid_report_desc, sizeof(hid_report_desc),&gampepad_ops);
 	if (ret != 0) {
 		LOG_ERR("Failed to register HID Device, %d", ret);
 		return ret;
@@ -215,7 +223,7 @@ int app_usb_init(void)
 
 	if (!usbd_can_detect_vbus(sample_usbd)) {
 		ret = usbd_enable(sample_usbd);
-		if (ret) {
+		if (ret){
 			LOG_ERR("Failed to enable device support");
 			return ret;
 		}

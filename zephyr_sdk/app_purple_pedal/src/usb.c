@@ -233,7 +233,11 @@ int app_usb_init(void)
 			return ret;
 		}
 	}
-
+	// ret = usbd_enable(sample_usbd);
+	// if (ret){
+	// 	LOG_ERR("Failed to enable device support");
+	// 	return ret;
+	// }
 	LOG_INF("USB DFU sample is initialized");
 
 	return 0;

@@ -39,7 +39,7 @@ enum adc_action adc_seq_cb(const struct device *dev,const struct adc_sequence *s
 		.brake = (int32_t)reading[0][1] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN) + GAMEPAD_REPORT_VALUE_MIN,
 		.clutch = (int32_t)reading[0][2] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN) + GAMEPAD_REPORT_VALUE_MIN,
 	};
-	int err = zbus_chan_pub(&gamepad_report_out_chan, &rpt, K_MSEC(10));
+	int err = zbus_chan_pub(&gamepad_report_out_chan, &rpt, K_MSEC(2));
 
 	struct app_adc_ctx *ctx = (struct app_adc_ctx *)sequence->options->user_data;
 	err = k_sem_take(&ctx->sem_stop, K_NO_WAIT);

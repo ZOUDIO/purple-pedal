@@ -41,6 +41,8 @@ LOG_MODULE_REGISTER(usb, CONFIG_APP_LOG_LEVEL);
 
 #define GAMEPAD_REPORT_OUT_LEN sizeof(struct gamepad_report_out)
 
+static const struct device *hid_dev = DEVICE_DT_GET_ONE(zephyr_hid_device);
+
 static const uint8_t hid_report_desc[] = HID_GAMEPAD_REPORT_DESC();
 
 USBD_DEVICE_DEFINE(dfu_usbd, DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)), 0x2fe3, 0xffff);
@@ -188,10 +190,13 @@ static void gamepad_report_usb_cb(const struct zbus_channel *chan)
 {
 	const struct gamepad_report_out *rpt = zbus_chan_const_msg(chan);
 
-	LOG_INF("gamepad report: accelerator = %d, brake = %d, clutch = %d",rpt->accelerator, rpt->brake, rpt->clutch);
+	//LOG_INF("gamepad report: accelerator = %d, brake = %d, clutch = %d",rpt->accelerator, rpt->brake, rpt->clutch);
 
 	//TODO: send out the gamepad report
-	//int err = hid_device_submit_report(hid_dev, sizeof(struct gamepad_report_out), report);
+	int err = hid_device_submit_report(hid_dev, sizeof(struct gamepad_report_out), (const uint8_t *const)rpt);
+	if(err){
+		LOG_ERR("hid_device_submit_report() returns %d", err);
+	}
 
 }
 
@@ -200,10 +205,10 @@ ZBUS_LISTENER_DEFINE(gp_rpt_usb_handler, gamepad_report_usb_cb);
 int app_usb_init(void)
 {
 	struct usbd_context *sample_usbd;
-	const struct device *hid_dev;
+	//const struct device *hid_dev;
 	int ret;
 
-	hid_dev = DEVICE_DT_GET_ONE(zephyr_hid_device);
+	//hid_dev = DEVICE_DT_GET_ONE(zephyr_hid_device);
 	if (!device_is_ready(hid_dev)) {
 		LOG_ERR("HID Device is not ready");
 		return -EIO;

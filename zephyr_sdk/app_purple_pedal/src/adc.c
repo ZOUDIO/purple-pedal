@@ -11,9 +11,12 @@ LOG_MODULE_REGISTER(app_adc, CONFIG_APP_LOG_LEVEL);
 #define ADC_NODE DT_ALIAS(pedal_adc)
 
 #define CHANNEL_COUNT DT_CHILD_NUM(ADC_NODE)
-#define CONFIG_SEQUENCE_SAMPLES 1
+#define CONFIG_SEQUENCE_SAMPLES (1)
+#define ADC_NUM_BITS (12)
+#define ADC_VAL_MIN (0)
+#define ADC_VAL_MAX (BIT_MASK(ADC_NUM_BITS))
 
-#define APP_ADC_STACK_SIZE 1024
+#define APP_ADC_STACK_SIZE 4096
 #define APP_ADC_PRIORITY 5
 
 ZBUS_CHAN_DECLARE(gamepad_report_out_chan);
@@ -32,9 +35,9 @@ enum adc_action adc_seq_cb(const struct device *dev,const struct adc_sequence *s
 {
 	uint16_t (*reading)[CHANNEL_COUNT] = (uint16_t (*)[CHANNEL_COUNT])sequence->buffer;
 	struct gamepad_report_out rpt = {
-		.accelerator = reading[0][0],
-		.brake = reading[0][1],
-		.clutch = reading[0][2],
+		.accelerator = (int32_t)reading[0][0] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN) + GAMEPAD_REPORT_VALUE_MIN,
+		.brake = (int32_t)reading[0][1] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN) + GAMEPAD_REPORT_VALUE_MIN,
+		.clutch = (int32_t)reading[0][2] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN) + GAMEPAD_REPORT_VALUE_MIN,
 	};
 	int err = zbus_chan_pub(&gamepad_report_out_chan, &rpt, K_MSEC(10));
 
@@ -59,7 +62,7 @@ static struct app_adc_ctx ctx = {
 	.ch_cfgs={DT_FOREACH_CHILD_SEP(ADC_NODE, ADC_CHANNEL_CFG_DT, (,))},
 	.adc_seq_opt = {
 		.extra_samplings = CONFIG_SEQUENCE_SAMPLES - 1,
-		.interval_us = 1000000,
+		.interval_us = 100000,
 		.callback = adc_seq_cb,
 		.user_data = &ctx,
 	},

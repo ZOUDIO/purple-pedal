@@ -17,6 +17,9 @@ struct __packed gamepad_report_out{
     int16_t clutch;
 };
 
+#define GAMEPAD_REPORT_VALUE_MAX (INT16_MAX)
+#define GAMEPAD_REPORT_VALUE_MIN (INT16_MIN)
+
 typedef int (*gamepad_sample_ready_callback)(void);
 
 int app_adc_init(void);

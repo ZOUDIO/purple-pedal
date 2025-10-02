@@ -15,6 +15,9 @@ extern "C" {
 #define USB_DEVICE_CONTROLLER_ID DT_NODELABEL(zephyr_udc0)
 #define HID_DEVICE_ID DT_NODELABEL(hid_dev_0)
 
+#define PWM_LED_PEDAL_NODE_ID	 DT_NODELABEL(pwm_leds_pedal)
+#define PWM_LED_RGB_NODE_ID	 DT_NODELABEL(pwm_leds_rgb)
+
 enum app_adc_action {
 	/** The sequence should be continued normally. */
 	APP_ADC_ACTION_NONE = 0,

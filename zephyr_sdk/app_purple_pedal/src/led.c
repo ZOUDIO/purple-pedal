@@ -7,9 +7,8 @@
 
 LOG_MODULE_REGISTER(led, CONFIG_APP_LOG_LEVEL);
 
-//#define LED_PWM_NODE_ID	 DT_NODELABEL(pwmleds)
-#define LED_PWM_NODE_ID	 DT_COMPAT_GET_ANY_STATUS_OKAY(pwm_leds)
-static const struct device *led_pwm = DEVICE_DT_GET(LED_PWM_NODE_ID);
+//#define LED_PWM_NODE_ID	 DT_COMPAT_GET_ANY_STATUS_OKAY(pwm_leds)
+static const struct device *led_pwm = DEVICE_DT_GET(PWM_LED_PEDAL_NODE_ID);
 
 static void gamepad_set_led_brightness(const struct device *dev, uint32_t led, int32_t pedal_value)
 {

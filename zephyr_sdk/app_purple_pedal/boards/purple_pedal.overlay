@@ -5,7 +5,7 @@
 		label = "HID0";
 		protocol-code = "none";
 		in-report-size = <64>;
-		in-polling-period-us = <1000>;
+		in-polling-period-us = <10000>;
 	};
 
 	aliases {

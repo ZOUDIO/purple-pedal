@@ -78,8 +78,14 @@ static int gamepad_get_report(const struct device *dev,const uint8_t type, const
 	return 0;
 }
 
+static void gamepad_input_report_done(const struct device *dev, const uint8_t *const report)
+{
+	LOG_WRN("gamepad_input_report_done() implemented");
+}
+
 struct hid_device_ops gampepad_ops = {
 	.iface_ready = gamepad_iface_ready,
+	.input_report_done = gamepad_input_report_done,
 	.get_report = gamepad_get_report,
 	.set_report = NULL,
 	.set_idle = NULL,

@@ -21,6 +21,26 @@ There are 2 possible options for firmware update:
 
 TODO: AD4130/1 might be a better choice.
 
+# DFU process
+
+```
+sudo dfu-util --alt 0 --download build/app_purple_pedal/zephyr/zephyr.signed.bin --detach-delay 20
+
+sudo dfu-util --alt 0 --download build/app_purple_pedal/zephyr/zephyr.signed.bin
+```
+
+On Docker, the device shall be attache twice after DFU is initiated, because it changes the mode of operation and the device needs to be "reattached"
+
+TODO: how to show LED status during firmware upgrading process:
+https://github.com/search?q=repo%3Azephyrproject-rtos%2Fzephyr+mcuboot-led&type=code&p=4
+
+CONFIG_MCUBOOT_INDICATION_LED:
+https://github.com/zephyrproject-rtos/mcuboot/blob/d5b0dcb9aaee397fc105ae2228e8030038c3d871/boot/zephyr/io.c#L62C8-L62C37
+
+take a look at:
+https://docs.zephyrproject.org/apidoc/latest/group__usbd__api.html
+
+How to add more USBD detailed information
 # reference documents
 
 HID specification:

@@ -2,6 +2,8 @@
 #include <zephyr/logging/log.h>
 #include "common.h"
 
+LOG_MODULE_REGISTER(main, CONFIG_APP_LOG_LEVEL);
+
 ZBUS_CHAN_DEFINE(gamepad_report_out_chan,  /* Name */
 		 struct gamepad_report_out, /* Message type */
 		 NULL, /* Validator */
@@ -18,8 +20,15 @@ ZBUS_CHAN_DEFINE(gamepad_adc_ctrl_chan,  /* Name */
 		 ZBUS_MSG_INIT(APP_ADC_ACTION_NONE)		      /* Initial value {0} */
 );
 
+static const struct app_version version = {
+	.minor = CONFIG_APP_VERSION_MINOR,
+	.major = CONFIG_APP_VERSION_MAJOR,
+};
+
+
 int main(void)
 {
+	LOG_INF("PurplePedal App Version: %u.%u", version.major, version.minor);
 	app_adc_init();
     app_usb_init();
 }

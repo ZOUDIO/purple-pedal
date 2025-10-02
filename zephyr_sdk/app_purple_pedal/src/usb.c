@@ -41,11 +41,13 @@ LOG_MODULE_REGISTER(usb, CONFIG_APP_LOG_LEVEL);
 
 #define GAMEPAD_REPORT_OUT_LEN sizeof(struct gamepad_report_out)
 
-static const struct device *hid_dev = DEVICE_DT_GET_ONE(zephyr_hid_device);
+//static const struct device *hid_dev = DEVICE_DT_GET_ONE(zephyr_hid_device);
+static const struct device *hid_dev = DEVICE_DT_GET(HID_DEVICE_ID);
 
 static const uint8_t hid_report_desc[] = HID_GAMEPAD_REPORT_DESC();
 
-USBD_DEVICE_DEFINE(dfu_usbd, DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)), 0x2fe3, 0xffff);
+//USBD_DEVICE_DEFINE(dfu_usbd, DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)), 0x2fe3, 0xffff);
+USBD_DEVICE_DEFINE(dfu_usbd, DEVICE_DT_GET(USB_DEVICE_CONTROLLER_ID), 0x2fe3, 0xffff);
 USBD_DESC_LANG_DEFINE(sample_lang);
 USBD_DESC_CONFIG_DEFINE(fs_cfg_desc, "DFU FS Configuration");
 USBD_DESC_CONFIG_DEFINE(hs_cfg_desc, "DFU HS Configuration");
@@ -58,6 +60,9 @@ static const uint8_t attributes = (IS_ENABLED(CONFIG_SAMPLE_USBD_SELF_POWERED) ?
 USBD_CONFIGURATION_DEFINE(sample_fs_config,attributes,CONFIG_SAMPLE_USBD_MAX_POWER, &fs_cfg_desc);
 /* High speed configuration */
 USBD_CONFIGURATION_DEFINE(sample_hs_config,attributes,CONFIG_SAMPLE_USBD_MAX_POWER, &hs_cfg_desc);
+
+/* semaphore used to track available buf in USB HID */
+static K_SEM_DEFINE(sem_hid_in_buf, CONFIG_USBD_HID_IN_BUF_COUNT, CONFIG_USBD_HID_IN_BUF_COUNT);
 
 ZBUS_CHAN_DECLARE(gamepad_adc_ctrl_chan);
 static void gamepad_iface_ready(const struct device *dev, const bool ready)
@@ -80,7 +85,9 @@ static int gamepad_get_report(const struct device *dev,const uint8_t type, const
 
 static void gamepad_input_report_done(const struct device *dev, const uint8_t *const report)
 {
-	LOG_WRN("gamepad_input_report_done() implemented");
+	//LOG_WRN("gamepad_input_report_done() implemented");
+	//give semaphore here
+	k_sem_give(&sem_hid_in_buf);
 }
 
 struct hid_device_ops gampepad_ops = {
@@ -195,11 +202,13 @@ static void switch_to_dfu_mode(struct usbd_context *const ctx)
 static void gamepad_report_usb_cb(const struct zbus_channel *chan)
 {
 	const struct gamepad_report_out *rpt = zbus_chan_const_msg(chan);
-
 	//LOG_INF("gamepad report: accelerator = %d, brake = %d, clutch = %d",rpt->accelerator, rpt->brake, rpt->clutch);
-
-	//TODO: send out the gamepad report
-	int err = hid_device_submit_report(hid_dev, sizeof(struct gamepad_report_out), (const uint8_t *const)rpt);
+	int err = k_sem_take(&sem_hid_in_buf, K_NO_WAIT);
+	if(err){
+		LOG_ERR("k_sem_take() returns %d. Report not submitted", err);
+		return;
+	}
+	err = hid_device_submit_report(hid_dev, sizeof(struct gamepad_report_out), (const uint8_t *const)rpt);
 	if(err){
 		LOG_ERR("hid_device_submit_report() returns %d", err);
 	}

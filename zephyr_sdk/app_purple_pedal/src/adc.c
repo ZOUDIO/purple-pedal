@@ -8,12 +8,12 @@
 
 LOG_MODULE_REGISTER(app_adc, CONFIG_APP_LOG_LEVEL);
 
-#define ADC_NODE_ID DT_ALIAS(pedal_adc)
-#define ADC_CHANNEL_COUNT DT_CHILD_NUM(ADC_NODE_ID)
-#define ADC_SAMPLE_PERIOD K_MSEC(10)
+// #define ADC_NODE_ID DT_ALIAS(pedal_adc)
+// #define ADC_CHANNEL_COUNT DT_CHILD_NUM(ADC_NODE_ID)
+// #define ADC_SAMPLE_PERIOD K_MSEC(10)
 
-#define CONFIG_SEQUENCE_SAMPLES (1)
-#define ADC_NUM_BITS (12)
+// #define CONFIG_SEQUENCE_SAMPLES (1)
+// #define ADC_NUM_BITS (12)
 #define ADC_VAL_MIN (0)
 #define ADC_VAL_MAX (BIT_MASK(ADC_NUM_BITS))
 
@@ -26,10 +26,10 @@ struct app_adc_ctx{
 	struct k_work_q *workq;
 	struct k_work work;
 	const struct device *adc;
-	const struct adc_channel_cfg ch_cfgs[DT_CHILD_NUM(ADC_NODE_ID)];
+	const struct adc_channel_cfg ch_cfgs[ADC_CHANNEL_COUNT];
 	const struct adc_sequence_options adc_seq_opt;
 	struct adc_sequence seq;
-	struct k_sem sem_stop;
+	//struct k_sem sem_stop;
 	uint16_t channel_reading[CONFIG_SEQUENCE_SAMPLES][ADC_CHANNEL_COUNT];
 } ;
 
@@ -70,13 +70,13 @@ static struct app_adc_ctx ctx = {
 		.user_data = &ctx,
 	},
 	.seq = {
-		.channels = BIT_MASK(DT_CHILD_NUM(ADC_NODE_ID)),
+		.channels = BIT_MASK(ADC_CHANNEL_COUNT),
 		.buffer = ctx.channel_reading,
 		.buffer_size = 	SIZEOF_FIELD(struct app_adc_ctx, channel_reading),
 		.resolution = 12,
 		.options = &ctx.adc_seq_opt,
 	},
-	.sem_stop = Z_SEM_INITIALIZER(ctx.sem_stop, 0, 1),
+	//.sem_stop = Z_SEM_INITIALIZER(ctx.sem_stop, 0, 1),
 };
 
 // static void app_adc_work_handler(struct k_work *work)
@@ -115,7 +115,7 @@ static void app_adc_work_handler(struct k_work *work)
 	if (err < 0){
 		LOG_ERR("zbus_chan_pub() error (%d)\n", err);
 	}		
-	LOG_DBG("app_adc_work_handler() ended");
+	//LOG_DBG("app_adc_work_handler() ended");
 }
 
 static void app_adc_timer_handler(struct k_timer *timer)

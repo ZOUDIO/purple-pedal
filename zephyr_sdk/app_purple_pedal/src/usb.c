@@ -127,11 +127,15 @@ static void msg_cb(struct usbd_context *const usbd_ctx, const struct usbd_msg *c
 
 	if (msg->type == USBD_MSG_DFU_APP_DETACH) {
 		switch_to_dfu_mode(usbd_ctx);
+		//TODO: here stop the ADC, set LED mode
 	}
 
 	if (msg->type == USBD_MSG_DFU_DOWNLOAD_COMPLETED) {
 		if (IS_ENABLED(CONFIG_BOOTLOADER_MCUBOOT) && IS_ENABLED(CONFIG_USBD_DFU_FLASH)) {
 			boot_request_upgrade(true); //true/false: whether the image should be used permanently or only tested once.
+			//TODO: here trigger a system reset
+			//sys_reboot(SYS_REBOOT_WARM);
+			//need CONFIG_REBOOT
 		}
 	}
 }

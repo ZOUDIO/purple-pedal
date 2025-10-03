@@ -14,8 +14,8 @@
 
 LOG_MODULE_REGISTER(hook, CONFIG_MCUBOOT_LOG_LEVEL);
 
-#define LED0_NODE DT_ALIAS(led3)
-static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
+// #define LED0_NODE DT_ALIAS(led3)
+// static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 
 void mcuboot_status_change(mcuboot_status_type_t status)
 {

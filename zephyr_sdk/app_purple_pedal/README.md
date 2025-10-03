@@ -29,6 +29,22 @@ sudo dfu-util --alt 0 --download build/app_purple_pedal/zephyr/zephyr.signed.bin
 sudo dfu-util --alt 0 --download build/app_purple_pedal/zephyr/zephyr.signed.bin
 ```
 
+When there is update, the output log shows below:
+
+```
+uart:~$ *** Booting MCUboot v2.2.0-54-g4eba8087fa60 ***
+*** Using Zephyr OS build v4.2.0 ***
+mcuboot_status: 0
+E: mcuboot_status: 0
+
+mcuboot_status: 1
+E: mcuboot_status: 1
+
+mcuboot_status: 2
+E: mcuboot_status: 2
+```
+status 1 is MCUBOOT_STATUS_UPGRADING, direct booting does NOT have this
+
 On Docker, the device shall be attache twice after DFU is initiated, because it changes the mode of operation and the device needs to be "reattached"
 
 TODO: how to show LED status during firmware upgrading process:

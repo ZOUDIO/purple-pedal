@@ -31,10 +31,10 @@ struct __packed gamepad_report_out{
     int16_t clutch;
 };
 
-struct __packed app_version{
-	uint8_t minor;
-	uint8_t major;
-};
+// struct __packed app_version{
+// 	uint8_t minor;
+// 	uint8_t major;
+// };
 
 #define GAMEPAD_REPORT_VALUE_MAX (INT16_MAX)
 #define GAMEPAD_REPORT_VALUE_MIN (INT16_MIN)

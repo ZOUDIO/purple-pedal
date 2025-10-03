@@ -1,0 +1,1 @@
+set(mcuboot_EXTRA_ZEPHYR_MODULES "${CMAKE_CURRENT_LIST_DIR}/hook_module" CACHE INTERNAL "hook_module directory")

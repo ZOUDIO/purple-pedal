@@ -29,6 +29,14 @@ sudo dfu-util --alt 0 --download build/app_purple_pedal/zephyr/zephyr.signed.bin
 sudo dfu-util --alt 0 --download build/app_purple_pedal/zephyr/zephyr.signed.bin
 ```
 
+The idea of mcuboot status hook is got from:
+
+https://github.com/zephyrproject-rtos/zephyr/tree/v4.2.0/tests/boot/mcuboot_recovery_retention
+
+a module is added and linked when building MCUBoot, so that the hook function can be called.
+this can be used to update LED status.
+
+
 When there is update, the output log shows below:
 
 ```
@@ -57,6 +65,12 @@ take a look at:
 https://docs.zephyrproject.org/apidoc/latest/group__usbd__api.html
 
 How to add more USBD detailed information
+
+# Existing Issues
+
+nRF PWN LED cannot set the period >250ms. maybe STM32 can. we may need timer to control LEDs
+
+
 # reference documents
 
 HID specification:

@@ -13,14 +13,21 @@ ZBUS_CHAN_DEFINE(gamepad_report_out_chan,  /* Name */
 		 ZBUS_MSG_INIT(0)		      /* Initial value {0} */
 );
 
-ZBUS_CHAN_DEFINE(gamepad_adc_ctrl_chan,  /* Name */
-		 enum app_adc_action, /* Message type */
+// ZBUS_CHAN_DEFINE(gamepad_adc_ctrl_chan,  /* Name */
+// 		 enum app_adc_action, /* Message type */
+// 		 NULL, /* Validator */
+// 		 NULL, /* User data */
+// 		 ZBUS_OBSERVERS(gp_adc_ctrl_handler), /* observers */
+// 		 ZBUS_MSG_INIT(APP_ADC_ACTION_NONE)		      /* Initial value {0} */
+// );
+
+ZBUS_CHAN_DEFINE(gamepad_status_chan,  /* Name */
+		 enum app_status, /* Message type */
 		 NULL, /* Validator */
 		 NULL, /* User data */
-		 ZBUS_OBSERVERS(gp_adc_ctrl_handler), /* observers */
-		 ZBUS_MSG_INIT(APP_ADC_ACTION_NONE)		      /* Initial value {0} */
+		 ZBUS_OBSERVERS(gp_adc_ctrl_handler, gp_status_led_handler), /* observers */
+		 ZBUS_MSG_INIT(APP_STATUS_NOT_CONNECTED)		      /* Initial value {0} */
 );
-
 // static const struct app_version version = {
 // 	.minor = CONFIG_APP_VERSION_MINOR,
 // 	.major = CONFIG_APP_VERSION_MAJOR,

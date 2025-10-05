@@ -7,6 +7,7 @@
 #include <zephyr/storage/disk_access.h>
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/zbus/zbus.h>
+#include <zephyr/sys/reboot.h>
 
 #include "common.h"
 
@@ -64,14 +65,32 @@ USBD_CONFIGURATION_DEFINE(sample_hs_config,attributes,CONFIG_SAMPLE_USBD_MAX_POW
 /* semaphore used to track available buf in USB HID */
 static K_SEM_DEFINE(sem_hid_in_buf, CONFIG_USBD_HID_IN_BUF_COUNT, CONFIG_USBD_HID_IN_BUF_COUNT);
 
-ZBUS_CHAN_DECLARE(gamepad_adc_ctrl_chan);
+//ZBUS_CHAN_DECLARE(gamepad_adc_ctrl_chan);
+// static void gamepad_iface_ready(const struct device *dev, const bool ready)
+// {
+// 	//here we turn adc front-end on and off
+// 	LOG_DBG("iface status: %d", ready);
+// 	int err;
+// 	const enum app_adc_action action = ready ? APP_ADC_ACTION_START : APP_ADC_ACTION_STOP;
+// 	err = zbus_chan_pub(&gamepad_adc_ctrl_chan, &action, K_MSEC(10));
+// 	if(err){
+// 		LOG_ERR("zbus_chan_pub() returns %d", err);
+// 	}
+// }
+ZBUS_CHAN_DECLARE(gamepad_status_chan);
 static void gamepad_iface_ready(const struct device *dev, const bool ready)
 {
 	//here we turn adc front-end on and off
 	LOG_DBG("iface status: %d", ready);
 	int err;
-	const enum app_adc_action action = ready ? APP_ADC_ACTION_START : APP_ADC_ACTION_STOP;
-	err = zbus_chan_pub(&gamepad_adc_ctrl_chan, &action, K_MSEC(10));
+	const enum app_status status = ready ? APP_STATUS_HID_WORKING : APP_STATUS_CONNEDTED;
+	if(status == APP_STATUS_HID_WORKING){
+		err = k_sem_init(&sem_hid_in_buf, CONFIG_USBD_HID_IN_BUF_COUNT, CONFIG_USBD_HID_IN_BUF_COUNT);
+		if(err){
+			LOG_ERR("k_sem_init() returns %d", err);
+		}
+	}
+	err = zbus_chan_pub(&gamepad_status_chan, &status, K_MSEC(10));
 	if(err){
 		LOG_ERR("zbus_chan_pub() returns %d", err);
 	}
@@ -105,16 +124,29 @@ static void switch_to_dfu_mode(struct usbd_context *const ctx);
 
 static void msg_cb(struct usbd_context *const usbd_ctx, const struct usbd_msg *const msg)
 {
+	int err;
+	const enum app_status status_connected = APP_STATUS_CONNEDTED;
+	const enum app_status status_not_connected = APP_STATUS_NOT_CONNECTED;
+	const enum app_status status_dfu = APP_STATUS_DFU;
 	LOG_INF("USBD message: %s", usbd_msg_type_string(msg->type));
 
 	if (msg->type == USBD_MSG_CONFIGURATION) {
 		LOG_INF("\tConfiguration value %d", msg->status);
 	}
-
+	if(msg->type == USBD_MSG_SUSPEND){
+		err = zbus_chan_pub(&gamepad_status_chan, &status_connected, K_MSEC(10));
+		if(err){
+			LOG_ERR("zbus_chan_pub() returns %d", err);
+		}	
+	}
 	if (usbd_can_detect_vbus(usbd_ctx)) {
 		if (msg->type == USBD_MSG_VBUS_READY) {
 			if (usbd_enable(usbd_ctx)) {
 				LOG_ERR("Failed to enable device support");
+			}
+			err = zbus_chan_pub(&gamepad_status_chan, &status_connected, K_MSEC(10));
+			if(err){
+				LOG_ERR("zbus_chan_pub() returns %d", err);
 			}
 		}
 
@@ -122,12 +154,20 @@ static void msg_cb(struct usbd_context *const usbd_ctx, const struct usbd_msg *c
 			if (usbd_disable(usbd_ctx)) {
 				LOG_ERR("Failed to disable device support");
 			}
+			err = zbus_chan_pub(&gamepad_status_chan, &status_not_connected, K_MSEC(10));
+			if(err){
+				LOG_ERR("zbus_chan_pub() returns %d", err);
+			}
 		}
 	}
 
 	if (msg->type == USBD_MSG_DFU_APP_DETACH) {
 		switch_to_dfu_mode(usbd_ctx);
-		//TODO: here stop the ADC, set LED mode
+		//here publish new status to stop the ADC, set LED mode
+		err = zbus_chan_pub(&gamepad_status_chan, &status_dfu, K_MSEC(10));
+		if(err){
+			LOG_ERR("zbus_chan_pub() returns %d", err);
+		}
 	}
 
 	if (msg->type == USBD_MSG_DFU_DOWNLOAD_COMPLETED) {
@@ -136,6 +176,8 @@ static void msg_cb(struct usbd_context *const usbd_ctx, const struct usbd_msg *c
 			//TODO: here trigger a system reset
 			//sys_reboot(SYS_REBOOT_WARM);
 			//need CONFIG_REBOOT
+			LOG_DBG("DFU download complete, reboot system...");
+			sys_reboot(SYS_REBOOT_WARM);
 		}
 	}
 }

@@ -16,13 +16,21 @@ extern "C" {
 #define HID_DEVICE_ID DT_NODELABEL(hid_dev_0)
 
 #define PWM_LED_PEDAL_NODE_ID	 DT_NODELABEL(pwm_leds_pedal)
-#define PWM_LED_RGB_NODE_ID	 DT_NODELABEL(pwm_leds_rgb)
+#define PWM_LED_STATUS_NODE_ID	 DT_NODELABEL(pwm_leds_rgb)
 
-enum app_adc_action {
-	/** The sequence should be continued normally. */
-	APP_ADC_ACTION_NONE = 0,
-	APP_ADC_ACTION_START,
-	APP_ADC_ACTION_STOP,
+// enum app_adc_action {
+// 	/** The sequence should be continued normally. */
+// 	APP_ADC_ACTION_NONE = 0,
+// 	APP_ADC_ACTION_START,
+// 	APP_ADC_ACTION_STOP,
+// };
+
+enum app_status{
+	APP_STATUS_NOT_CONNECTED=0,
+	APP_STATUS_CONNEDTED,
+	APP_STATUS_HID_WORKING,
+	APP_STATUS_DFU,
+	APP_STATUS_NUM,
 };
 
 struct __packed gamepad_report_out{

@@ -159,16 +159,31 @@ static K_TIMER_DEFINE(app_adc_timer, app_adc_timer_handler, NULL);
 // 		return;
 // 	}
 // }
+
+// static void gamepad_adc_ctrl_cb(const struct zbus_channel *chan)
+// {
+// 	const enum app_adc_action *action = zbus_chan_const_msg(chan);
+// 	//perform start / stop actions
+// 	if(*action == APP_ADC_ACTION_START){
+// 		k_timer_start(&app_adc_timer, K_MSEC(0), ADC_SAMPLE_PERIOD);
+// 		return;
+// 	}
+
+// 	if(*action == APP_ADC_ACTION_STOP){
+// 		k_timer_stop(&app_adc_timer);
+// 		return;
+// 	}
+// }
+// ZBUS_LISTENER_DEFINE(gp_adc_ctrl_handler, gamepad_adc_ctrl_cb);
+
 static void gamepad_adc_ctrl_cb(const struct zbus_channel *chan)
 {
-	const enum app_adc_action *action = zbus_chan_const_msg(chan);
-	//perform start / stop actions
-	if(*action == APP_ADC_ACTION_START){
+	const enum app_status *status = zbus_chan_const_msg(chan);
+	if(*status == APP_STATUS_HID_WORKING){
 		k_timer_start(&app_adc_timer, K_MSEC(0), ADC_SAMPLE_PERIOD);
 		return;
 	}
-
-	if(*action == APP_ADC_ACTION_STOP){
+	else{
 		k_timer_stop(&app_adc_timer);
 		return;
 	}

@@ -88,6 +88,9 @@ static enum smf_state_result connected_run(void *o)
 		if(usb_sm->event.usbd_msg == USBD_MSG_VBUS_REMOVED){
 			smf_set_state(&usb_sm->sm_ctx, &usb_sm->sm_states[APP_STATE_IDLE]);
 		}
+		else if(usb_sm->event.usbd_msg == USBD_MSG_DFU_APP_DETACH){
+			smf_set_state(&usb_sm->sm_ctx, &usb_sm->sm_states[APP_STATE_DFU]);
+		}
 	}
 	else{
 		LOG_ERR("unrecognized usb_event type %d", usb_sm->event.type);
@@ -115,7 +118,35 @@ static enum smf_state_result hid_working_run(void *o)
 		}
 	}
 	else if(usb_sm->event.type == EVENT_USBD_MSG){
-		//do nothing
+		if(usb_sm->event.usbd_msg == USBD_MSG_DFU_APP_DETACH){
+			smf_set_state(&usb_sm->sm_ctx, &usb_sm->sm_states[APP_STATE_DFU]);
+		}
+	}
+	else{
+		LOG_ERR("unrecognized usb_event type %d", usb_sm->event.type);
+	}
+	return SMF_EVENT_HANDLED;
+}
+
+static void dfu_entry(void *o)
+{
+	LOG_DBG("dfu_entry()");
+	const enum app_state state = APP_STATE_DFU;
+	int err = zbus_chan_pub(&gamepad_status_chan, &state, K_MSEC(2));
+	if (err < 0){
+		LOG_ERR("zbus_chan_pub() error (%d)\n", err);
+	}	
+}
+
+static enum smf_state_result dfu_run(void *o)
+{
+	struct usb_state_machine *usb_sm = CONTAINER_OF(o, struct usb_state_machine, sm_ctx);
+
+	if(usb_sm->event.type == EVENT_HID){
+
+	}
+	else if(usb_sm->event.type == EVENT_USBD_MSG){
+
 	}
 	else{
 		LOG_ERR("unrecognized usb_event type %d", usb_sm->event.type);
@@ -127,7 +158,7 @@ static const struct smf_state usb_sm_states[] = {
         [APP_STATE_IDLE] = SMF_CREATE_STATE(idle_entry, idle_run, NULL, NULL, NULL),
         [APP_STATE_CONNECTED] = SMF_CREATE_STATE(connected_entry, connected_run, NULL, NULL, NULL),
         [APP_STATE_HID_WORKING] = SMF_CREATE_STATE(hid_working_entry, hid_working_run, NULL, NULL, NULL),
-        [APP_STATE_DFU] = SMF_CREATE_STATE(NULL, NULL, NULL, NULL, NULL),
+        [APP_STATE_DFU] = SMF_CREATE_STATE(dfu_entry, dfu_run, NULL, NULL, NULL),
 };
 
 void post_usb_event(struct usb_event event)

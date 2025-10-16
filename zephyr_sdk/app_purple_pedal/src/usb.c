@@ -90,7 +90,7 @@ static void gamepad_input_report_done(const struct device *dev, const uint8_t *c
 {
 	//LOG_WRN("gamepad_input_report_done() implemented");
 	//give semaphore here
-	LOG_DBG("gamepad_input_report_done() done.");
+	//LOG_DBG("gamepad_input_report_done() done.");
 	k_sem_give(&sem_hid_in_buf);
 }
 
@@ -173,10 +173,10 @@ static void msg_cb(struct usbd_context *const usbd_ctx, const struct usbd_msg *c
 
 	if (msg->type == USBD_MSG_DFU_DOWNLOAD_COMPLETED) {
 		if (IS_ENABLED(CONFIG_BOOTLOADER_MCUBOOT) && IS_ENABLED(CONFIG_USBD_DFU_FLASH)) {
+			LOG_DBG("DFU download complete, reboot system...");
+			k_msleep(5000);
 			boot_request_upgrade(true); //true/false: whether the image should be used permanently or only tested once.
 			//here trigger a system reset
-			LOG_DBG("DFU download complete, reboot system...");
-			k_msleep(1000);
 			sys_reboot(SYS_REBOOT_WARM);
 		}
 	}
@@ -248,19 +248,22 @@ static void gamepad_report_usb_cb(const struct zbus_channel *chan)
 {
 	const struct gamepad_report_out *rpt = zbus_chan_const_msg(chan);
 	//LOG_INF("gamepad report: accelerator = %d, brake = %d, clutch = %d",rpt->accelerator, rpt->brake, rpt->clutch);
-	// int err = k_sem_take(&sem_hid_in_buf, K_NO_WAIT);
-	// if(err){
-	// 	LOG_ERR("k_sem_take() returns %d. Report not submitted", err);
-	// 	return;
-	// }
-	int err = hid_device_submit_report(hid_dev, sizeof(struct gamepad_report_out), (const uint8_t *const)rpt);
+	int err = k_sem_take(&sem_hid_in_buf, K_NO_WAIT);
+	if(err){
+		LOG_ERR("k_sem_take() returns %d. Report not submitted", err);
+		return;
+	}
+	//this semaphore helps to avoid calling hid_device_submit_report() too often.
+	//so less likely to crash under Linux when hid is not opened
+	//and hid_device_submit_report() always fails.
+	err = hid_device_submit_report(hid_dev, sizeof(struct gamepad_report_out), (const uint8_t *const)rpt);
 	if(err){
 		LOG_ERR("hid_device_submit_report() returns %d", err);
 		k_sem_give(&sem_hid_in_buf);
 	}
-	else{
-		LOG_DBG("hid_device_submit_report() done.");
-	}
+	// else{
+	// 	LOG_DBG("hid_device_submit_report() done.");
+	// }
 
 }
 

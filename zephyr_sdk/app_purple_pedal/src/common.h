@@ -8,7 +8,7 @@ extern "C" {
 
 #define ADC_NODE_ID DT_ALIAS(pedal_adc)
 #define ADC_CHANNEL_COUNT DT_CHILD_NUM(ADC_NODE_ID)
-#define ADC_SAMPLE_PERIOD K_MSEC(1000)
+#define ADC_SAMPLE_PERIOD K_MSEC(10)
 
 //below are arbitrary settings for nRF52840. STM32 might differ
 #define CONFIG_SEQUENCE_SAMPLES (1)

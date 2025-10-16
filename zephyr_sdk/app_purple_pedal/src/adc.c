@@ -178,12 +178,14 @@ static K_TIMER_DEFINE(app_adc_timer, app_adc_timer_handler, NULL);
 
 static void gamepad_adc_ctrl_cb(const struct zbus_channel *chan)
 {
-	const enum app_status *status = zbus_chan_const_msg(chan);
-	if(*status == APP_STATUS_HID_WORKING){
+	const enum app_state *state = zbus_chan_const_msg(chan);
+	if(*state == APP_STATE_HID_WORKING){
+		LOG_DBG("start ADC timer");
 		k_timer_start(&app_adc_timer, K_MSEC(0), ADC_SAMPLE_PERIOD);
 		return;
 	}
 	else{
+		LOG_DBG("stop ADC timer");
 		k_timer_stop(&app_adc_timer);
 		return;
 	}

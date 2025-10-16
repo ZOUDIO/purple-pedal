@@ -3,10 +3,12 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include <stdbool.h>
+#include <zephyr/usb/usbd_msg.h>
 
 #define ADC_NODE_ID DT_ALIAS(pedal_adc)
 #define ADC_CHANNEL_COUNT DT_CHILD_NUM(ADC_NODE_ID)
-#define ADC_SAMPLE_PERIOD K_MSEC(10)
+#define ADC_SAMPLE_PERIOD K_MSEC(1000)
 
 //below are arbitrary settings for nRF52840. STM32 might differ
 #define CONFIG_SEQUENCE_SAMPLES (1)
@@ -25,12 +27,12 @@ extern "C" {
 // 	APP_ADC_ACTION_STOP,
 // };
 
-enum app_status{
-	APP_STATUS_NOT_CONNECTED=0,
-	APP_STATUS_CONNEDTED,
-	APP_STATUS_HID_WORKING,
-	APP_STATUS_DFU,
-	APP_STATUS_NUM,
+enum app_state{
+	APP_STATE_IDLE=0,
+	APP_STATE_CONNECTED,
+	APP_STATE_HID_WORKING,
+	APP_STATE_DFU,
+	APP_STATE_NUM,
 };
 
 struct __packed gamepad_report_out{
@@ -44,6 +46,19 @@ struct __packed gamepad_report_out{
 // 	uint8_t major;
 // };
 
+enum usb_event_type{
+	EVENT_HID = 0,
+	EVENT_USBD_MSG,
+};
+
+struct usb_event{
+	enum usb_event_type type;
+	union {
+		bool hid_ready;
+		enum usbd_msg_type usbd_msg;
+	};
+};
+
 #define GAMEPAD_REPORT_VALUE_MAX (INT16_MAX)
 #define GAMEPAD_REPORT_VALUE_MIN (INT16_MIN)
 
@@ -51,6 +66,9 @@ typedef int (*gamepad_sample_ready_callback)(void);
 
 int app_adc_init(void);
 int app_usb_init(void);
+
+//void gamepad_set_status_led(const enum app_state state);
+void post_usb_event(struct usb_event event);
 
 #ifdef __cplusplus
 }

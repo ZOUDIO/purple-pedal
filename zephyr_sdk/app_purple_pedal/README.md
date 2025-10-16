@@ -21,7 +21,25 @@ There are 2 possible options for firmware update:
 
 TODO: AD4130/1 might be a better choice.
 
-# DFU process
+## different HID behavior on Linux and Windows
+
+On Windows, the HID device is directly used by the system. There is no error when calling
+hid_device_submit_report(). 
+
+On windows, below website can be used to test the HID:
+
+[https://hardwaretester.com/gamepad](https://hardwaretester.com/gamepad)
+
+On Linux, after HID is plugged in, it is not directly used by the system.
+hid_device_submit_report() will report error, until the system opens the HID and begin to receive message.
+
+Below command can manually begin to receive HID message from Linux:
+```shell
+cat /dev/input/event0
+```
+
+
+## DFU process
 
 ```
 sudo dfu-util --alt 0 --download build/app_purple_pedal/zephyr/zephyr.signed.bin --detach-delay 20
@@ -66,7 +84,7 @@ https://docs.zephyrproject.org/apidoc/latest/group__usbd__api.html
 
 How to add more USBD detailed information
 
-# Existing Issues
+## Existing Issues
 
 nRF PWN LED cannot set the period >250ms. maybe STM32 can. we may need timer to control LEDs
 

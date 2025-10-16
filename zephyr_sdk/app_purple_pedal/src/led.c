@@ -40,24 +40,37 @@ struct status_led_pattern{
 	uint32_t delay_off[NUM_STATUS_LED];
 };
 
-const struct status_led_pattern patterns[APP_STATUS_NUM] = {
-	[APP_STATUS_NOT_CONNECTED]	= {.delay_on = {125, 125, 125}, .delay_off = {125, 125, 125}},
-	[APP_STATUS_CONNEDTED] 		= {.delay_on = {125, 125, 125}, .delay_off = {125, 125, 125}},
-	[APP_STATUS_HID_WORKING] 	= {.delay_on = {125, 125, 125}, .delay_off = {125, 125, 125}},
-	[APP_STATUS_DFU] 			= {.delay_on = {125, 125, 125}, .delay_off = {125, 125, 125}},
+const struct status_led_pattern patterns[APP_STATE_NUM] = {
+	[APP_STATE_IDLE]	= {.delay_on = {125, 125, 125}, .delay_off = {125, 125, 125}},
+	[APP_STATE_CONNECTED] 		= {.delay_on = {125, 125, 125}, .delay_off = {125, 125, 125}},
+	[APP_STATE_HID_WORKING] 	= {.delay_on = {125, 125, 125}, .delay_off = {125, 125, 125}},
+	[APP_STATE_DFU] 			= {.delay_on = {125, 125, 125}, .delay_off = {125, 125, 125}},
 };
 
 static void gamepad_status_led_cb(const struct zbus_channel *chan)
 {
 	int err;
-	const enum app_status *status = zbus_chan_const_msg(chan);
-	LOG_DBG("set status LED to status %d", *status);
+	const enum app_state *state = zbus_chan_const_msg(chan);
+	LOG_DBG("set status LED to status %d", *state);
 
 	for(uint32_t i=0; i<NUM_STATUS_LED; i++){
-		err = led_blink(led_pwm_status, i, patterns[*status].delay_on[i], patterns[*status].delay_off[i]);
+		err = led_blink(led_pwm_status, i, patterns[*state].delay_on[i], patterns[*state].delay_off[i]);
 		if(err){
 			LOG_ERR("led_blink() returns %d", err);
 		}
 	}
 }
 ZBUS_LISTENER_DEFINE(gp_status_led_handler, gamepad_status_led_cb);
+
+// void gamepad_set_status_led(const enum app_state state)
+// {
+// 	int err;
+// 	LOG_DBG("set status LED to status %d", state);
+
+// 	for(uint32_t i=0; i<NUM_STATUS_LED; i++){
+// 		err = led_blink(led_pwm_status, i, patterns[state].delay_on[i], patterns[state].delay_off[i]);
+// 		if(err){
+// 			LOG_ERR("led_blink() returns %d", err);
+// 		}
+// 	}
+// }

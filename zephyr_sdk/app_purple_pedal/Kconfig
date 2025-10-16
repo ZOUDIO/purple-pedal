@@ -8,23 +8,23 @@ source "samples/subsys/usb/common/Kconfig.sample_usbd"
 
 source "Kconfig.zephyr"
 
-menu "Purple Pedal App options"
+# menu "Purple Pedal App options"
 
-config APP_VERSION_MAJOR
-	int "Application firmware major version number"
-    default 0
-    range 0 $(UINT8_MAX)
-	help
-	  Use this to set firmware version number (major).
+# config APP_VERSION_MAJOR
+# 	int "Application firmware major version number"
+#     default 0
+#     range 0 $(UINT8_MAX)
+# 	help
+# 	  Use this to set firmware version number (major).
 
-config APP_VERSION_MINOR
-	int "Application firmware minor version number"
-    default 0
-    range 0 $(UINT8_MAX)
-	help
-	  Use this to set firmware version number (minor).
+# config APP_VERSION_MINOR
+# 	int "Application firmware minor version number"
+#     default 0
+#     range 0 $(UINT8_MAX)
+# 	help
+# 	  Use this to set firmware version number (minor).
 
-endmenu
+# endmenu
 
 module = APP
 module-str = APP

@@ -20,11 +20,14 @@
 
     //pin definitions in zephyr/dt-bindings/adc/ad7124-adc.h
     //matches datasheet table 74: https://www.analog.com/media/en/technical-documentation/data-sheets/AD7124-4.pdf
+	adc-mode=<0>;
+
 	channel@0 {
 		reg = <0>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		//zephyr,resolution=<16>;
 		zephyr,differential;
 		zephyr,input-positive = <AD7124_ADC_AIN0>; 
         zephyr,input-negative = <AD7124_ADC_AIN1>;
@@ -33,6 +36,7 @@
 		reg = <1>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
+		//zephyr,resolution=<16>;
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,differential;
 		zephyr,input-positive = <AD7124_ADC_AIN2>; 
@@ -42,6 +46,7 @@
 		reg = <2>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
+		//zephyr,resolution=<16>;
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,differential;
 		zephyr,input-positive = <AD7124_ADC_AIN4>; 

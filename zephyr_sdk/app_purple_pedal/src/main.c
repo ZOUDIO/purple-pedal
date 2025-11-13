@@ -51,7 +51,9 @@ static enum smf_state_result idle_run(void *o)
 {
 	struct usb_state_machine *usb_sm = CONTAINER_OF(o, struct usb_state_machine, sm_ctx);
 	if(usb_sm->event.type == EVENT_HID){
-
+		if(usb_sm->event.hid_ready){
+			smf_set_state(&usb_sm->sm_ctx, &usb_sm->sm_states[APP_STATE_HID_WORKING]);
+		}
 	}
 	else if(usb_sm->event.type == EVENT_USBD_MSG){
 		if(usb_sm->event.usbd_msg == USBD_MSG_VBUS_READY){

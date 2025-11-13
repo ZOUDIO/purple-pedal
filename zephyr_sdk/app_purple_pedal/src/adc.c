@@ -30,7 +30,7 @@ struct app_adc_ctx{
 	const struct adc_sequence_options adc_seq_opt;
 	struct adc_sequence seq;
 	//struct k_sem sem_stop;
-	uint16_t channel_reading[CONFIG_SEQUENCE_SAMPLES][ADC_CHANNEL_COUNT];
+	uint32_t channel_reading[CONFIG_SEQUENCE_SAMPLES][ADC_CHANNEL_COUNT];
 } ;
 
 // enum adc_action adc_seq_cb(const struct device *dev,const struct adc_sequence *sequence,uint16_t sampling_index)
@@ -73,7 +73,9 @@ static struct app_adc_ctx ctx = {
 		.channels = BIT_MASK(ADC_CHANNEL_COUNT),
 		.buffer = ctx.channel_reading,
 		.buffer_size = 	SIZEOF_FIELD(struct app_adc_ctx, channel_reading),
-		.resolution = 12,
+		//.resolution = 12,
+		.resolution = 24,
+		//.resolution = DT_PROP(ADC_NODE_ID, resolution),
 		.options = &ctx.adc_seq_opt,
 	},
 	//.sem_stop = Z_SEM_INITIALIZER(ctx.sem_stop, 0, 1),
@@ -102,7 +104,9 @@ static struct app_adc_ctx ctx = {
 static void app_adc_work_handler(struct k_work *work)
 {
 	struct app_adc_ctx *ctx = CONTAINER_OF(work, struct app_adc_ctx, work);
+	int64_t begin = k_uptime_get();
 	int err = adc_read(ctx->adc, &ctx->seq);
+	LOG_DBG("adc time: %d ms", (int32_t)(k_uptime_get()-begin));
 	if (err < 0){
 		LOG_ERR("adc_read() error (%d)\n", err);
 	}

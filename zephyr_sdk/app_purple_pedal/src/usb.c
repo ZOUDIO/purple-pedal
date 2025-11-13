@@ -254,7 +254,7 @@ static void gamepad_report_usb_cb(const struct zbus_channel *chan)
 		return;
 	}
 	//this semaphore helps to avoid calling hid_device_submit_report() too often.
-	//so less likely to crash under Linux when hid is not opened
+	//so less likely to crash under Linux when switching to DFU while hid is not opened
 	//and hid_device_submit_report() always fails.
 	err = hid_device_submit_report(hid_dev, sizeof(struct gamepad_report_out), (const uint8_t *const)rpt);
 	if(err){

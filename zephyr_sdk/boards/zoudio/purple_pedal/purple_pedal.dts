@@ -30,30 +30,30 @@
 	// 	};
 	// };
 
-	// leds: leds {
-	// 	compatible = "gpio-leds";
+	leds: leds {
+		compatible = "gpio-leds";
 
-	// 	green_led_1: led_1 {
-	// 		gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
-	// 		label = "User LD1";
-	// 	};
+		green_led_1: led_1 {
+			gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
 
-	// 	blue_led: led_2 {
-	// 		gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
-	// 		label = "User LD2";
-	// 	};
-	// };
+		// blue_led: led_2 {
+		// 	gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
+		// 	label = "User LD2";
+		// };
+	};
 	pwm_leds_rgb: pwm3leds {
 		compatible = "pwm-leds";
 		status = "okay";
 		pwm_led_r: pwm_led_r {
-			pwms = <&pwm3 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
-		};
-		pwm_led_g: pwm_led_g {
 			pwms = <&pwm3 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
+		pwm_led_g: pwm_led_g {
+			pwms = <&pwm3 3 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
 		pwm_led_b: pwm_led_b {
-			pwms = <&pwm3 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			pwms = <&pwm3 4 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
 
@@ -83,7 +83,7 @@
 	// };
 
 	aliases {
-		// led0 = &green_led_1;
+		led0 = &green_led_1;
 		// led1 = &blue_led;
 		//pwm-led0 = &green_pwm_led;
 		//sw0 = &user_button;
@@ -94,7 +94,12 @@
 };
 
 //use internal 16MHz RC oscillator
-&clk_hsi {
+// &clk_hsi {
+// 	status = "okay";
+// };
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>;
 	status = "okay";
 };
 
@@ -102,13 +107,23 @@
 // 	status = "okay";
 // };
 
+// &pll {
+// 	div-m = <1>;
+// 	mul-n = <12>;// 16x12=192MHz
+// 	div-p = <2>;
+// 	div-q = <4>; // PLL/Q=48MHz
+// 	div-r = <3>; // PLL/R=64MHz
+// 	clocks = <&clk_hsi>;
+// 	status = "okay";
+// };
+
 &pll {
 	div-m = <1>;
-	mul-n = <12>;// 16x12=192MHz
-	div-p = <4>;
+	mul-n = <24>;// 8x24=192MHz
+	div-p = <2>;
 	div-q = <4>; // PLL/Q=48MHz
 	div-r = <3>; // PLL/R=64MHz
-	clocks = <&clk_hsi>;
+	clocks = <&clk_hse>;
 	status = "okay";
 };
 
@@ -127,18 +142,18 @@
 	status = "okay";
 };
 
-&spi1 {
-	pinctrl-0 = <&spi1_nss_pb0 &spi1_sck_pa5
-		     &spi1_miso_pa6 &spi1_mosi_pa7>;
+&spi2 {
+	pinctrl-0 = <&spi2_nss_pb9 &spi2_sck_pb8
+		     &spi2_miso_pb6 &spi2_mosi_pb7>;
 	pinctrl-names = "default";
-    cs-gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+    cs-gpios = <&gpiob 9 GPIO_ACTIVE_LOW>;
 	status = "okay";
     adc_ad7124: ad7124@0 {
 	    compatible = "adi,ad7124-adc";
 	    reg = <0x0>;
-	    spi-max-frequency = <0>;
+	    spi-max-frequency = <1000000>;
 	    #io-channel-cells = <1>;
-	    active-device = <1>;
+	    active-device = <0>; //0 ID_AD7124_4, 1 ID_AD7124_8
         status = "okay";
     };
 };
@@ -146,6 +161,13 @@
 zephyr_udc0: &usb {
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
 	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK(APB1, 13)>,
+				 <&rcc STM32_SRC_PLL_Q USB_SEL(1)>;
+	//maximum-speed = "low-speed";
+	//vbus-gpios = <&gpiob 5 GPIO_ACTIVE_HIGH>;
+	// interrupts = <16 0>;
+	// num-bidir-endpoints = <16>;
+	// ram-size = <8192>;
 	status = "okay";
 };
 

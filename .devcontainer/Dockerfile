@@ -24,6 +24,7 @@ RUN chmod 644 /etc/wsl.conf
 RUN apt-get -y update && \
 	apt-get -y install \
 	iptables \
+	dfu-util \
 	dnsmasq \
 	gdbserver \
 	udev \
@@ -71,7 +72,7 @@ WORKDIR "${ZEPHYR_SDK}"
 RUN cp ./sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d/60-openocd.rules
 
 #install strictdoc tool for requirement management
-RUN pip3 install strictdoc
+RUN pip3 install strictdoc jsonschema
 
 USER user
 

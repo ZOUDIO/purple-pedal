@@ -104,7 +104,20 @@
             "gdbTarget": "localhost:2331",
             "runToEntryPoint": "main"
         },
-
+        {
+            "name": "Debug STM32G0B0 MCUBoot",
+            "cwd": "${workspaceFolder}",
+            "armToolchainPath": "${env:ZEPHYR_SDK}/arm-zephyr-eabi/bin/",
+            "toolchainPrefix": "arm-zephyr-eabi",
+            "executable": "${workspaceRoot}/build/mcuboot/zephyr/zephyr.elf",
+            "request": "attach",
+            "type": "cortex-debug",
+            "device": "STM32G0B0CE",
+            "servertype": "jlink",
+            "showDevDebugOutput": "both",
+            "gdbTarget": "localhost:2331",
+            "runToEntryPoint": "main"
+        },
         {
             "name": "Debug nRF52 Remote",
             "cwd": "${workspaceFolder}",

@@ -41,10 +41,10 @@ struct status_led_pattern{
 };
 
 const struct status_led_pattern patterns[APP_STATE_NUM] = {
-	[APP_STATE_IDLE]	= {.delay_on = {250, 250, 250}, .delay_off = {250, 250, 250}},
-	[APP_STATE_CONNECTED] 		= {.delay_on = {250, 250, 250}, .delay_off = {250, 250, 250}},
-	[APP_STATE_HID_WORKING] 	= {.delay_on = {125, 125, 125}, .delay_off = {125, 125, 125}},
-	[APP_STATE_DFU] 			= {.delay_on = {125, 125, 125}, .delay_off = {125, 125, 125}},
+	[APP_STATE_IDLE]	= {.delay_on = {500, 0, 0}, .delay_off = {1500, 2000, 2000}},
+	[APP_STATE_CONNECTED] 		= {.delay_on = {500, 500, 250}, .delay_off = {1500, 1500, 2000}},
+	[APP_STATE_HID_WORKING] 	= {.delay_on = {0, 500, 0}, .delay_off = {2000, 1500, 2000}},
+	[APP_STATE_DFU] 			= {.delay_on = {0, 0, 250}, .delay_off = {500, 500, 250}},
 };
 
 static void gamepad_status_led_cb(const struct zbus_channel *chan)

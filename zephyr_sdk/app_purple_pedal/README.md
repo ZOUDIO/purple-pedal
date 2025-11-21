@@ -4,7 +4,7 @@
 ```shell
 west build -b purple_pedal --sysbuild zephyr_sdk/app_purple_pedal
 
-west build -b purple_pedal --sysbuild zephyr_sdk/app_purple_pedal -- -DEXTRA_CONF_FILE="overlay-shell.conf"
+w
 
 west build -b nrf52840dk/nrf52840 --sysbuild zephyr_sdk/app_purple_pedal
 

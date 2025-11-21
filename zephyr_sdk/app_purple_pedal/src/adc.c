@@ -104,17 +104,19 @@ static struct app_adc_ctx ctx = {
 static void app_adc_work_handler(struct k_work *work)
 {
 	struct app_adc_ctx *ctx = CONTAINER_OF(work, struct app_adc_ctx, work);
-	int64_t begin = k_uptime_get();
+	//int64_t begin = k_uptime_get();
 	int err = adc_read(ctx->adc, &ctx->seq);
-	LOG_DBG("adc time: %d ms", (int32_t)(k_uptime_get()-begin));
+	//LOG_DBG("adc time: %d ms", (int32_t)(k_uptime_get()-begin));
 	if (err < 0){
 		LOG_ERR("adc_read() error (%d)\n", err);
 	}
 	struct gamepad_report_out rpt = {
-		.accelerator = (int32_t)ctx->channel_reading[0][0] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN) + GAMEPAD_REPORT_VALUE_MIN,
-		.brake = (int32_t)ctx->channel_reading[0][1] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN) + GAMEPAD_REPORT_VALUE_MIN,
-		.clutch = (int32_t)ctx->channel_reading[0][2] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN) + GAMEPAD_REPORT_VALUE_MIN,
+		.accelerator = (int64_t)ctx->channel_reading[0][0] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN) + GAMEPAD_REPORT_VALUE_MIN,
+		.brake = (int64_t)ctx->channel_reading[0][1] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN) + GAMEPAD_REPORT_VALUE_MIN,
+		.clutch = (int64_t)ctx->channel_reading[0][2] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN) + GAMEPAD_REPORT_VALUE_MIN,
 	};
+	int64_t acc = (int64_t)ctx->channel_reading[0][0] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN);
+	//LOG_ERR("acc(%lld)\n", (ADC_VAL_MAX - ADC_VAL_MIN));
 	err = zbus_chan_pub(&gamepad_report_out_chan, &rpt, K_MSEC(2));
 	if (err < 0){
 		LOG_ERR("zbus_chan_pub() error (%d)\n", err);

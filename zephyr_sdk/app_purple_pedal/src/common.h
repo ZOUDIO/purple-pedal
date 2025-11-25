@@ -35,11 +35,11 @@ enum app_state{
 	APP_STATE_NUM,
 };
 
-struct __packed gamepad_report_out{
+struct gamepad_report_out{
     int16_t accelerator;
     int16_t brake;
     int16_t clutch;
-};
+}__packed;
 
 // struct __packed app_version{
 // 	uint8_t minor;

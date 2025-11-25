@@ -4,7 +4,7 @@
 ```shell
 west build -b purple_pedal --sysbuild zephyr_sdk/app_purple_pedal
 
-w
+west build -b purple_pedal --sysbuild zephyr_sdk/app_purple_pedal -- -DEXTRA_CONF_FILE="overlay-shell.conf"
 
 west build -b nrf52840dk/nrf52840 --sysbuild zephyr_sdk/app_purple_pedal
 
@@ -41,12 +41,33 @@ cat /dev/input/event0
 
 ## DFU process
 
+### On Linux
 ```
 sudo dfu-util --alt 0 --download build/app_purple_pedal/zephyr/zephyr.signed.bin --detach-delay 20
 
 sudo dfu-util --alt 0 --download build/app_purple_pedal/zephyr/zephyr.signed.bin
 ```
+### On windows:
 
+Need to download Windows version of dfu-util:
+
+https://dfu-util.sourceforge.net/
+
+https://dfu-util.sourceforge.net/releases/
+
+https://dfu-util.sourceforge.net/releases/dfu-util-0.11-binaries.tar.xz
+
+Use Zadig tool to install WinUSB driver for the HID device:
+
+https://github.com/libusb/libusb/wiki/Windows#How_to_use_libusb_on_Windows
+
+Note that this Zadig WinUSB driver install needs to be done twice, the device shall disconnect once and connect with another VID/PID.
+
+run from windows terminal:
+```
+.\dfu-util.exe -d 2fe3:0005 --alt 0 --download zephyr.signed.bin
+```
+### LED status during mcuboot phase
 The idea of mcuboot status hook is got from:
 
 https://github.com/zephyrproject-rtos/zephyr/tree/v4.2.0/tests/boot/mcuboot_recovery_retention

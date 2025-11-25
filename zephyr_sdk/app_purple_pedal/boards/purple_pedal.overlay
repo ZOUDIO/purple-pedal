@@ -2,7 +2,7 @@
 / {
 	hid_dev_0: hid_dev_0 {
 		compatible = "zephyr,hid-device";
-		label = "HID0";
+		label = "PurplePedal";
 		protocol-code = "none";
 		in-report-size = <64>;
 		in-polling-period-us = <10000>;
@@ -25,8 +25,8 @@
 	channel@0 {
 		reg = <0>;
 		zephyr,gain = "ADC_GAIN_128";
-		zephyr,reference = "ADC_REF_EXTERNAL0"; //ADC_REF_VDD_1 is also OK
-		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 4800)>;
+		zephyr,reference = "ADC_REF_VDD_1"; //ADC_REF_VDD_1 is also OK
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 2400)>;
 		//zephyr,resolution=<16>;
 		zephyr,differential;
 		zephyr,input-positive = <AD7124_ADC_AIN0>; 
@@ -35,9 +35,9 @@
 	channel@1 {
 		reg = <1>;
 		zephyr,gain = "ADC_GAIN_128";
-		zephyr,reference = "ADC_REF_EXTERNAL0";
+		zephyr,reference = "ADC_REF_VDD_1";
 		//zephyr,resolution=<16>;
-		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 4800)>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 2400)>;
 		zephyr,differential;
 		zephyr,input-positive = <AD7124_ADC_AIN2>; 
         zephyr,input-negative = <AD7124_ADC_AIN3>;
@@ -45,9 +45,9 @@
     channel@2 {
 		reg = <2>;
 		zephyr,gain = "ADC_GAIN_128";
-		zephyr,reference = "ADC_REF_EXTERNAL0";
+		zephyr,reference = "ADC_REF_VDD_1";
 		//zephyr,resolution=<16>;
-		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 4800)>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 2400)>;
 		zephyr,differential;
 		zephyr,input-positive = <AD7124_ADC_AIN4>; 
         zephyr,input-negative = <AD7124_ADC_AIN5>;

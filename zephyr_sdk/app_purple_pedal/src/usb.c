@@ -20,21 +20,43 @@ LOG_MODULE_REGISTER(usb, CONFIG_APP_LOG_LEVEL);
  */
 #define HID_USAGE_SIM_CTRL		0x02
 
+// Windows does NOT handle Clutch correctly
+// #define HID_GAMEPAD_REPORT_DESC() {				\
+// 	HID_USAGE_PAGE(HID_USAGE_GEN_DESKTOP),		\
+// 	HID_USAGE(HID_USAGE_GEN_DESKTOP_JOYSTICK),	\
+// 	HID_COLLECTION(HID_COLLECTION_APPLICATION),	\
+// 		HID_USAGE_PAGE(HID_USAGE_SIM_CTRL),	\
+// 		HID_COLLECTION(HID_COLLECTION_PHYSICAL),      \
+// 			/* Axis Usage of Accelerator, Brake, Clutch */				\
+// 			HID_USAGE(0xC4), \
+// 			HID_USAGE(0xC5), \
+// 			HID_USAGE(0xC6), \
+// 			HID_LOGICAL_MIN16(0x00, 0x80),	\
+// 			HID_LOGICAL_MAX16(0xff, 0x7f),	\
+// 			HID_REPORT_SIZE(16),	\
+// 			HID_REPORT_COUNT(3),	\
+// 			/*   Input (Data,Var,Abs)*/\
+// 			HID_INPUT(0x02),		\
+// 		HID_END_COLLECTION,			\
+// 	HID_END_COLLECTION,			\
+// }
+
+// see: https://www.overtake.gg/threads/anyone-muck-around-with-their-own-usb-hid-and-get-the-clutch-to-work.189256/
+//https://forum.pjrc.com/index.php?threads/teensy-4-1-logitech-steering-wheel.74310/
 #define HID_GAMEPAD_REPORT_DESC() {				\
 	HID_USAGE_PAGE(HID_USAGE_GEN_DESKTOP),		\
-	HID_USAGE(HID_USAGE_GEN_DESKTOP_GAMEPAD),	\
+	HID_USAGE(HID_USAGE_GEN_DESKTOP_JOYSTICK),	\
 	HID_COLLECTION(HID_COLLECTION_APPLICATION),	\
-		HID_USAGE_PAGE(HID_USAGE_SIM_CTRL),	\
-		/* Axis Usage of Accelerator, Brake, Clutch */				\
-		HID_USAGE(0xC4), \
-		HID_USAGE(0xC5), \
-		HID_USAGE(0xC6), \
-		HID_LOGICAL_MIN16(0x00, 0x80),	\
-		HID_LOGICAL_MAX16(0xff, 0x7f),	\
-		HID_REPORT_SIZE(16),	\
-		HID_REPORT_COUNT(3),	\
-		/*   Input (Data,Var,Abs)*/\
-		HID_INPUT(0x02),		\
+			/* Axis Usage of Y - Accelerator, Rz - Brake, Z - Clutch */				\
+			HID_USAGE(0x31), \
+			HID_USAGE(0x32), \
+			HID_USAGE(0x35), \
+			HID_LOGICAL_MIN16(0x00, 0x00),	\
+			HID_LOGICAL_MAX16(0xff, 0xff),	\
+			HID_REPORT_SIZE(16),	\
+			HID_REPORT_COUNT(3),	\
+			/*   Input (Data,Var,Abs)*/\
+			HID_INPUT(0x02),		\
 	HID_END_COLLECTION,			\
 }
 //TODO: add usage page LED and LED outputs. see HUT doc section 11 LED Page.
@@ -256,7 +278,12 @@ static void gamepad_report_usb_cb(const struct zbus_channel *chan)
 	//this semaphore helps to avoid calling hid_device_submit_report() too often.
 	//so less likely to crash under Linux when switching to DFU while hid is not opened
 	//and hid_device_submit_report() always fails.
+	
 	err = hid_device_submit_report(hid_dev, sizeof(struct gamepad_report_out), (const uint8_t *const)rpt);
+
+	// const struct gamepad_report_out rpt1={.accelerator = 100, .brake = 200, .clutch = 300};
+	// err = hid_device_submit_report(hid_dev, sizeof(struct gamepad_report_out), (const uint8_t *const)&rpt1);
+
 	if(err){
 		LOG_ERR("hid_device_submit_report() returns %d", err);
 		k_sem_give(&sem_hid_in_buf);

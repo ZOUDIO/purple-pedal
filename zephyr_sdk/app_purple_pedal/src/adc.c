@@ -16,6 +16,11 @@ LOG_MODULE_REGISTER(app_adc, CONFIG_APP_LOG_LEVEL);
 // #define ADC_NUM_BITS (12)
 #define ADC_VAL_MIN (0)
 #define ADC_VAL_MAX (BIT_MASK(ADC_NUM_BITS))
+#define ADC_VAL_MID (BIT(ADC_NUM_BITS-1))
+
+#define ADC_GAIN (128)
+#define LOAD_CELL_MV_V (1)
+#define LOAD_CELL_MAX ((uint64_t)ADC_VAL_MID * ADC_GAIN * LOAD_CELL_MV_V / 1000ULL)
 
 #define APP_ADC_STACK_SIZE 4096
 #define APP_ADC_PRIORITY 5
@@ -110,12 +115,36 @@ static void app_adc_work_handler(struct k_work *work)
 	if (err < 0){
 		LOG_ERR("adc_read() error (%d)\n", err);
 	}
+	// struct gamepad_report_out rpt = {
+	// 	.accelerator = (int64_t)ctx->channel_reading[0][0] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN) + GAMEPAD_REPORT_VALUE_MIN,
+	// 	.brake = (int64_t)ctx->channel_reading[0][1] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN) + GAMEPAD_REPORT_VALUE_MIN,
+	// 	.clutch = (int64_t)ctx->channel_reading[0][2] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN) + GAMEPAD_REPORT_VALUE_MIN,
+	// };
+
 	struct gamepad_report_out rpt = {
-		.accelerator = (int64_t)ctx->channel_reading[0][0] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN) + GAMEPAD_REPORT_VALUE_MIN,
-		.brake = (int64_t)ctx->channel_reading[0][1] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN) + GAMEPAD_REPORT_VALUE_MIN,
-		.clutch = (int64_t)ctx->channel_reading[0][2] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN) + GAMEPAD_REPORT_VALUE_MIN,
+		.accelerator = 
+		((int64_t)(ctx->channel_reading[0][0] - ADC_VAL_MID))
+		*32768
+		/LOAD_CELL_MAX,
+
+		.brake = 
+		((int64_t)(ctx->channel_reading[0][1] - ADC_VAL_MID))
+		*32768
+		/LOAD_CELL_MAX,
+
+		.clutch = 
+		((int64_t)(ctx->channel_reading[0][2] - ADC_VAL_MID))
+		*32768
+		/LOAD_CELL_MAX,
 	};
-	int64_t acc = (int64_t)ctx->channel_reading[0][0] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN);
+	//LOG_INF("gamepad report: accelerator = %d, brake = %d, clutch = %d",rpt.accelerator, rpt.brake, rpt.clutch);
+
+	// struct gamepad_report_out rpt = {
+	// 	.accelerator = 100,
+	// 	.brake = 200,
+	// 	.clutch = 300,
+	// };
+	//int64_t acc = (int64_t)ctx->channel_reading[0][0] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN);
 	//LOG_ERR("acc(%lld)\n", (ADC_VAL_MAX - ADC_VAL_MIN));
 	err = zbus_chan_pub(&gamepad_report_out_chan, &rpt, K_MSEC(2));
 	if (err < 0){

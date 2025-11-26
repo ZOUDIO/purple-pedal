@@ -41,8 +41,9 @@ LOG_MODULE_REGISTER(usb, CONFIG_APP_LOG_LEVEL);
 // 	HID_END_COLLECTION,			\
 // }
 
-// see: https://www.overtake.gg/threads/anyone-muck-around-with-their-own-usb-hid-and-get-the-clutch-to-work.189256/
-//https://forum.pjrc.com/index.php?threads/teensy-4-1-logitech-steering-wheel.74310/
+// see below links about clutch does not work for windows
+// https://www.overtake.gg/threads/anyone-muck-around-with-their-own-usb-hid-and-get-the-clutch-to-work.189256/
+// https://forum.pjrc.com/index.php?threads/teensy-4-1-logitech-steering-wheel.74310/
 #define HID_GAMEPAD_REPORT_DESC() {				\
 	HID_USAGE_PAGE(HID_USAGE_GEN_DESKTOP),		\
 	HID_USAGE(HID_USAGE_GEN_DESKTOP_JOYSTICK),	\
@@ -51,8 +52,8 @@ LOG_MODULE_REGISTER(usb, CONFIG_APP_LOG_LEVEL);
 			HID_USAGE(0x31), \
 			HID_USAGE(0x32), \
 			HID_USAGE(0x35), \
-			HID_LOGICAL_MIN16(0x00, 0x00),	\
-			HID_LOGICAL_MAX16(0xff, 0xff),	\
+			HID_LOGICAL_MIN16(0x00, 0x80),	\
+			HID_LOGICAL_MAX16(0xff, 0x7f),	\
 			HID_REPORT_SIZE(16),	\
 			HID_REPORT_COUNT(3),	\
 			/*   Input (Data,Var,Abs)*/\

@@ -67,6 +67,9 @@ run from windows terminal:
 ```
 .\dfu-util.exe -d 2fe3:0005 --alt 0 --download zephyr.signed.bin
 ```
+
+To prevent DFU failure, it is recommended to turn off the program that is using the HID so that the USB bus is not busy and transmission is less likely to go wrong.
+
 ### LED status during mcuboot phase
 The idea of mcuboot status hook is got from:
 

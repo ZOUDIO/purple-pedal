@@ -12,7 +12,10 @@ static const struct device *led_pwm_pedal = DEVICE_DT_GET(PWM_LED_PEDAL_NODE_ID)
 
 static void gamepad_set_led_brightness(const struct device *dev, uint32_t led, int32_t pedal_value)
 {
-	uint8_t brightness = (pedal_value - GAMEPAD_REPORT_VALUE_MIN) * 100 / (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN);
+	//uint8_t brightness = (pedal_value - GAMEPAD_REPORT_VALUE_MIN) * 100 / (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN);
+	//TODO: need to implement internal calibration process to get these ranges.
+	int32_t br = (pedal_value - 4000) * 100 / 20000;
+	uint8_t brightness = (br <0) ? 0 : ((br>100) ? 100 : (uint8_t)br);
 	//LOG_DBG("LED: %u, brightness: %u", led, brightness);
 	int err = led_set_brightness(dev, led, brightness);
 	if(err){

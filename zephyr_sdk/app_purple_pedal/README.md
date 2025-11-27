@@ -111,7 +111,7 @@ How to add more USBD detailed information
 ## Existing Issues
 
 nRF PWN LED cannot set the period >250ms. maybe STM32 can. we may need timer to control LEDs
-
+STM32 does not have thisproblem.
 
 # reference documents
 
@@ -122,3 +122,83 @@ https://www.usb.org/sites/default/files/hid1_11.pdf
 HID usage table:
 
 https://www.usb.org/sites/default/files/documents/hut1_12v2.pdf
+
+
+# How to use the Binary file package:
+
+There are 3 files:
+
+bootloader_and_app_ver01.bin: bootloader + applilcation ver1
+
+app_ver01.signed.bin: application ver1 only, for testing firmware update over USB
+
+app_ver02.signed.bin: application ver2 only, for testing firmware update over USB
+
+
+## initial programming:
+
+Use JLink J_Flash tool to program bootloader_and_app_ver01.bin to the board.
+
+Use the UART on JLink to monitor the boot message, below bootup message should be seen
+
+```
+*** Booting Zephyr OS build v4.3.0 ***
+[00:00:00.004,000] <inf> main: PurplePedal App Version: 0.1
+[00:00:00.010,000] <inf> usb: USB DFU sample is initialized
+...
+```
+## Firmware update over USB with dfu-util (on Windows system):
+
+### step 1: download dfu-util
+Need to download Windows version of dfu-util:
+
+https://dfu-util.sourceforge.net/releases/dfu-util-0.11-binaries.tar.xz
+
+Unzip the package, windows DFU tool is under the /win64 folder.
+
+### step 2: install WinUSB driver using Zadig tool
+
+Download Zadig tool to install WinUSB driver for the HID device:
+
+https://zadig.akeo.ie/
+
+Plug in the PurplePedal board, open Zadig tool, the board show up as "USBD Sample", Install WinUSB driver for this device.
+
+Note that this Zadig WinUSB driver install needs to be done twice, the device shall disconnect once and connect with a different VID/PID.
+
+### step 3: use dfl-util to update the firmware
+
+Copy app_ver01.signed.bin and app_ver02.signed.bin to the /win64 folder for easier access.
+
+run from windows terminal:
+```
+cd C:\Users\<your_user_name>\Downloads\dfu-util-0.11-binaries\dfu-util-0.11-binaries\win64>
+
+.\dfu-util.exe -d 2fe3:0005 --alt 0 --download app_ver02.signed.bin
+```
+
+When first time running this, dfu-util will fail after device is disconnected. This is because the device appears with another VID/PID under DFU mode. Need to repeat step2 to install WinUSB driver again for this device,
+and re-run the dfu-util command. 
+
+Note that this only happens for the first time. After that, it should run without any issue.
+
+After DFU is finished, below message can be seen from JLink UART output.
+Note that the device will take 10 to 20 seconds to upgrade and run the new firmware.
+Then it shows App Version: 0.2
+
+```
+ *** Booting MCUboot v2.2.0-192-g96576b341ee1 ***
+*** Using Zephyr OS build v4.3.0 ***
+
+<this will take 10~20 seconds>
+
+*** Booting Zephyr OS build v4.3.0 ***
+[00:00:00.004,000] <inf> main: PurplePedal App Version: 0.2
+
+```
+
+Firmware version can also be downgraded, using below command to program app_ver01.signed.bin:
+
+```
+.\dfu-util.exe -d 2fe3:0005 --alt 0 --download app_ver01.signed.bin
+```

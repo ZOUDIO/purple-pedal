@@ -166,7 +166,7 @@ Plug in the PurplePedal board, open Zadig tool, the board show up as "USBD Sampl
 
 Note that this Zadig WinUSB driver install needs to be done twice, the device shall disconnect once and connect with a different VID/PID.
 
-### step 3: use dfl-util to update the firmware
+### step 3: use dfu-util to update the firmware
 
 Copy app_ver01.signed.bin and app_ver02.signed.bin to the /win64 folder for easier access.
 

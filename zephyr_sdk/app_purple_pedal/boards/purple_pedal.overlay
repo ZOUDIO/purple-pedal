@@ -13,6 +13,19 @@
 	};
 };
 
+// &dma1 {
+// 	status = "okay";
+// };
+// &dmamux1 {
+// 	status = "okay";
+// };
+// &spi2 {
+
+//     dmas = <&dma1 2 1 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
+//             <&dma1 3 1 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+// 	dma-names = "tx", "rx";
+// 	status = "okay";
+// };
 
 &adc_ad7124 {
 	#address-cells = <1>;
@@ -20,13 +33,16 @@
 
     //pin definitions in zephyr/dt-bindings/adc/ad7124-adc.h
     //matches datasheet table 74: https://www.analog.com/media/en/technical-documentation/data-sheets/AD7124-4.pdf
-	adc-mode = <0>;
+	adc-mode = <0>;	//continuous mode
 	power-mode = <2>;//high power mode
+	refbuf-enable-mask=<7>;
+	bipolar-mask=<7>; //bipolar mode allows input range 0~AVdd
+	filter-type-mask=<7>;
 	channel@0 {
 		reg = <0>;
 		zephyr,gain = "ADC_GAIN_128";
-		zephyr,reference = "ADC_REF_VDD_1"; //ADC_REF_VDD_1 is also OK
-		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 2400)>;
+		zephyr,reference = "ADC_REF_EXTERNAL0"; //ADC_REF_VDD_1 is also OK
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 1500)>;
 		//zephyr,resolution=<16>;
 		zephyr,differential;
 		zephyr,input-positive = <AD7124_ADC_AIN0>; 
@@ -35,9 +51,9 @@
 	channel@1 {
 		reg = <1>;
 		zephyr,gain = "ADC_GAIN_128";
-		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,reference = "ADC_REF_EXTERNAL0";
 		//zephyr,resolution=<16>;
-		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 2400)>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 1500)>;
 		zephyr,differential;
 		zephyr,input-positive = <AD7124_ADC_AIN2>; 
         zephyr,input-negative = <AD7124_ADC_AIN3>;
@@ -45,9 +61,9 @@
     channel@2 {
 		reg = <2>;
 		zephyr,gain = "ADC_GAIN_128";
-		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,reference = "ADC_REF_EXTERNAL0";
 		//zephyr,resolution=<16>;
-		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 2400)>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 1500)>;
 		zephyr,differential;
 		zephyr,input-positive = <AD7124_ADC_AIN4>; 
         zephyr,input-negative = <AD7124_ADC_AIN5>;

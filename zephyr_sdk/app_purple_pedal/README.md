@@ -108,20 +108,48 @@ https://docs.zephyrproject.org/apidoc/latest/group__usbd__api.html
 
 How to add more USBD detailed information
 
-## Existing Issues
+## Reduce AD7124 jitter:
 
-nRF PWN LED cannot set the period >250ms. maybe STM32 can. we may need timer to control LEDs
-STM32 does not have thisproblem.
+Zephyr AD7124 driver does not enable Zero latency mode,
 
-# reference documents
+after enabling this mode, AND also set the output data rate to 1500 SPS,
+channel1 jitter is reduced.
 
-HID specification:
+```c
+static int adc_ad7124_filter_cfg(const struct device *dev, const struct ad7124_channel_config *cfg)
+{
+	int filter_setup = 0;
+	int filter_mask = 0;
+	int ret;
 
-https://www.usb.org/sites/default/files/hid1_11.pdf
+	// filter_setup = FIELD_PREP(AD7124_FILTER_CONF_REG_FILTER_MSK, cfg->props.filter_type) |
+	// 	       FIELD_PREP(AD7124_FILTER_FS_MSK, cfg->props.odr_sel_bits);
+	// filter_mask = AD7124_FILTER_CONF_REG_FILTER_MSK | AD7124_FILTER_FS_MSK;
 
-HID usage table:
+	filter_setup = FIELD_PREP(AD7124_FILTER_CONF_REG_FILTER_MSK, cfg->props.filter_type) |
+		       FIELD_PREP(AD7124_FILTER_FS_MSK, cfg->props.odr_sel_bits) |
+			   FIELD_PREP(GENMASK(16, 16), 1);
+	filter_mask = AD7124_FILTER_CONF_REG_FILTER_MSK | AD7124_FILTER_FS_MSK | GENMASK(16, 16);
 
-https://www.usb.org/sites/default/files/documents/hut1_12v2.pdf
+	/* Set filter type and odr*/
+	ret = adc_ad7124_reg_write_msk(dev, AD7124_FILTER(cfg->cfg_slot), AD7124_FILTER_REG_LEN,
+				       filter_setup, filter_mask);
+	if (ret) {
+		return ret;
+	}
+
+	return 0;
+}
+```
+
+## Implementing Calibration function
+
+Calibration usese USB HID feature report.
+
+HIDApiTest tool can be used for windows to debug and send / receive HID feature report:
+
+https://github.com/todbot/hidapitester
+
 
 
 # How to use the Binary file package:
@@ -202,3 +230,13 @@ Firmware version can also be downgraded, using below command to program app_ver0
 ```
 .\dfu-util.exe -d 2fe3:0005 --alt 0 --download app_ver01.signed.bin
 ```
+
+# reference documents
+
+HID specification:
+
+https://www.usb.org/sites/default/files/hid1_11.pdf
+
+HID usage table:
+
+https://www.usb.org/sites/default/files/documents/hut1_12v2.pdf

@@ -44,9 +44,9 @@ struct status_led_pattern{
 };
 
 const struct status_led_pattern patterns[APP_STATE_NUM] = {
-	[APP_STATE_IDLE]	= {.delay_on = {500, 0, 0}, .delay_off = {1500, 2000, 2000}},
-	[APP_STATE_CONNECTED] 		= {.delay_on = {500, 500, 250}, .delay_off = {1500, 1500, 2000}},
-	[APP_STATE_HID_WORKING] 	= {.delay_on = {0, 500, 0}, .delay_off = {2000, 1500, 2000}},
+	[APP_STATE_IDLE]	= {.delay_on = {5, 0, 0}, .delay_off = {15, 20, 20}},
+	[APP_STATE_CONNECTED] 		= {.delay_on = {5, 5, 0}, .delay_off = {15, 15, 20}},
+	[APP_STATE_HID_WORKING] 	= {.delay_on = {0, 5, 0}, .delay_off = {20, 15, 20}},
 	[APP_STATE_DFU] 			= {.delay_on = {0, 0, 250}, .delay_off = {500, 500, 250}},
 };
 

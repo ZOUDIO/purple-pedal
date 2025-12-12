@@ -15,9 +15,11 @@ wsl --install -d Ubuntu-22.04
 WARNING FOR <Deleted Link> IT MANAGED SYSTEMS
 
 If you receive an error like below during fetching the docker image
+```
 0.882 ERROR: cannot verify objects.githubusercontent.com's certificate, issued b
 y ‘CN=Cisco Umbrella Secondary SubCA ams-SG,O=Cisco’:
 0.882   Unable to locally verify the issuer's authority.
+```
 
 Please disable the Umbrella services
 ```

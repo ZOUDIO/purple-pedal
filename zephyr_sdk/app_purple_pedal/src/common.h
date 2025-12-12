@@ -27,6 +27,9 @@ extern "C" {
 // 	APP_ADC_ACTION_STOP,
 // };
 
+#define GAMEPAD_INPUT_REPORT_ID (0x01)
+#define GAMEPAD_FEATURE_REPORT_ID (0x02)
+
 enum app_state{
 	APP_STATE_IDLE=0,
 	APP_STATE_CONNECTED,
@@ -36,11 +39,20 @@ enum app_state{
 };
 
 struct gamepad_report_out{
+	uint8_t report_id;
     int16_t accelerator;
     int16_t brake;
     int16_t clutch;
 }__packed;
 
+struct gamepad_feature_rpt{
+	uint8_t report_id;
+	uint32_t accelerator_raw;
+	uint32_t brake_raw;
+	uint32_t clutch_raw;
+	int32_t offset;
+	int32_t scale;
+}__packed;
 // struct __packed app_version{
 // 	uint8_t minor;
 // 	uint8_t major;

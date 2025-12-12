@@ -150,7 +150,13 @@ HIDApiTest tool can be used for windows to debug and send / receive HID feature 
 
 https://github.com/todbot/hidapitester
 
+below command can read / write feature report:
+```
+ .\hidapitester.exe --vidpid 2FE3/0005 --usagePage 0x1 --usage 0x04 --open --read-feature 2
 
+ .\hidapitester.exe --vidpid 2FE3/0005 --usagePage 0x1 --usage 0x04 --open --send-feature 2,0x01,0x02,0x03
+ 
+```
 
 # How to use the Binary file package:
 

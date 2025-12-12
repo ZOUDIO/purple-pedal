@@ -11,7 +11,7 @@ ZBUS_CHAN_DEFINE(gamepad_report_out_chan,  /* Name */
 		 NULL, /* Validator */
 		 NULL, /* User data */
 		 ZBUS_OBSERVERS(gp_rpt_usb_handler, gp_rpt_led_handler), /* observers */
-		 ZBUS_MSG_INIT(0)		      /* Initial value {0} */
+		 ZBUS_MSG_INIT(.report_id=GAMEPAD_INPUT_REPORT_ID, .accelerator=0, .brake=0, .clutch=0)		      /* Initial value {0} */
 );
 
 ZBUS_CHAN_DEFINE(gamepad_status_chan,  /* Name */

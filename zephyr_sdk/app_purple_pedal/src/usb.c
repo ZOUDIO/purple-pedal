@@ -44,10 +44,15 @@ LOG_MODULE_REGISTER(usb, CONFIG_APP_LOG_LEVEL);
 // see below links about clutch does not work for windows
 // https://www.overtake.gg/threads/anyone-muck-around-with-their-own-usb-hid-and-get-the-clutch-to-work.189256/
 // https://forum.pjrc.com/index.php?threads/teensy-4-1-logitech-steering-wheel.74310/
+
+#define HID_USAGE_PAGE_2BYTE(l, h)		\
+	HID_ITEM(HID_ITEM_TAG_USAGE_PAGE, HID_ITEM_TYPE_GLOBAL, 2), l, h
+
 #define HID_GAMEPAD_REPORT_DESC() {				\
 	HID_USAGE_PAGE(HID_USAGE_GEN_DESKTOP),		\
 	HID_USAGE(HID_USAGE_GEN_DESKTOP_JOYSTICK),	\
 	HID_COLLECTION(HID_COLLECTION_APPLICATION),	\
+			HID_REPORT_ID(GAMEPAD_INPUT_REPORT_ID), \
 			/* Axis Usage of Y - Accelerator, Rz - Brake, Z - Clutch */				\
 			HID_USAGE(0x31), \
 			HID_USAGE(0x32), \
@@ -58,6 +63,17 @@ LOG_MODULE_REGISTER(usb, CONFIG_APP_LOG_LEVEL);
 			HID_REPORT_COUNT(3),	\
 			/*   Input (Data,Var,Abs)*/\
 			HID_INPUT(0x02),		\
+			/* feature report*/ \
+			HID_USAGE_PAGE_2BYTE(0x00, 0xff), \
+			HID_REPORT_ID(GAMEPAD_FEATURE_REPORT_ID), \
+			HID_USAGE(0x31), \
+			HID_USAGE(0x32), \
+			HID_USAGE(0x35), \
+			HID_LOGICAL_MIN16(0x00, 0x80),	\
+			HID_LOGICAL_MAX16(0xff, 0x7f),	\
+			HID_REPORT_SIZE(16),	\
+			HID_REPORT_COUNT(3), \
+			HID_FEATURE(0x02), \
 	HID_END_COLLECTION,			\
 }
 //TODO: add usage page LED and LED outputs. see HUT doc section 11 LED Page.
@@ -105,8 +121,26 @@ static void gamepad_iface_ready(const struct device *dev, const bool ready)
 
 static int gamepad_get_report(const struct device *dev,const uint8_t type, const uint8_t id, const uint16_t len,uint8_t *const buf)
 {
-	LOG_WRN("Get Report not implemented, Type %u ID %u", type, id);
-	return 0;
+	if(type != HID_REPORT_TYPE_FEATURE){
+		LOG_WRN("Get Report not implemented, Type %u ID %u", type, id);
+		return 0;
+	}
+	
+	if(len >= sizeof(struct gamepad_feature_rpt)){
+		struct gamepad_feature_rpt *rpt = buf;
+		rpt->report_id = 2;
+		rpt->accelerator_raw = 3;
+		rpt->brake_raw = 4;
+		rpt->clutch_raw = 5;
+		rpt->offset = 6;
+		rpt->scale = 7;
+		return sizeof(struct gamepad_feature_rpt);
+	}
+	else{
+		LOG_ERR("len too small");
+		return 0;
+	}
+	
 }
 
 static void gamepad_input_report_done(const struct device *dev, const uint8_t *const report)

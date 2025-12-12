@@ -122,6 +122,7 @@ static void app_adc_work_handler(struct k_work *work)
 	// };
 
 	struct gamepad_report_out rpt = {
+		.report_id = GAMEPAD_INPUT_REPORT_ID,
 		.accelerator = 
 		((int64_t)(ctx->channel_reading[0][0] - ADC_VAL_MID))
 		*32768

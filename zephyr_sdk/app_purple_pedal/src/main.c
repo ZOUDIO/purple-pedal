@@ -181,6 +181,7 @@ int main(void)
 	int err;
 
 	LOG_INF("PurplePedal App Version: %u.%u", APP_VERSION_MAJOR, APP_VERSION_MINOR);
+	app_setting_init();
 	app_adc_init();
     app_usb_init();
 

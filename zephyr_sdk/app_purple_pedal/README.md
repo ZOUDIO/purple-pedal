@@ -152,12 +152,34 @@ https://github.com/todbot/hidapitester
 
 below command can read / write feature report:
 ```
- .\hidapitester.exe --vidpid 2FE3/0005 --usagePage 0x1 --usage 0x04 --open --read-feature 2
+//read raw values
+.\hidapitester.exe --vidpid 2FE3/0005 --usagePage 0x1 --usage 0x04 --open --read-feature 2
 
- .\hidapitester.exe --vidpid 2FE3/0005 --usagePage 0x1 --usage 0x04 --open --send-feature 2,0x01,0x02,0x03
+//read calibration settings
+.\hidapitester.exe --vidpid 2FE3/0005 --usagePage 0x1 --usage 0x04 --open --read-feature 3
+
+//set calibration settings
+.\hidapitester.exe --vidpid 2FE3/0005 --usagePage 0x1 --usage 0x04 --open --send-feature 3,0x01,0x02,0x03
  
+ //read dualsense of PS5:
+ .\hidapitester.exe --vidpid 054C/0CE6 --open --get-report-descriptor
 ```
 
+with DiView + PS5 dualsense, Rx and Ry triggers are single directional value, with operating range 0~255:
+```
+0x85, 0x01,        //   Report ID (1)
+0x09, 0x30,        //   Usage (X)
+0x09, 0x31,        //   Usage (Y)
+0x09, 0x32,        //   Usage (Z)
+0x09, 0x35,        //   Usage (Rz)
+0x09, 0x33,        //   Usage (Rx)
+0x09, 0x34,        //   Usage (Ry)
+0x15, 0x00,        //   Logical Minimum (0)
+0x26, 0xFF, 0x00,  //   Logical Maximum (255)
+0x75, 0x08,        //   Report Size (8)
+0x95, 0x06,        //   Report Count (6)
+0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+```
 # How to use the Binary file package:
 
 There are 3 files:

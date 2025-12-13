@@ -34,7 +34,7 @@ struct app_adc_ctx{
 	const struct adc_channel_cfg ch_cfgs[ADC_CHANNEL_COUNT];
 	const struct adc_sequence_options adc_seq_opt;
 	struct adc_sequence seq;
-	//struct k_sem sem_stop;
+	const struct gamepad_calibration *calibration;
 	uint32_t channel_reading[CONFIG_SEQUENCE_SAMPLES][ADC_CHANNEL_COUNT];
 } ;
 
@@ -243,5 +243,8 @@ int app_adc_init(void)
 	k_timer_user_data_set(&app_adc_timer, &ctx);
 	k_work_queue_init(&app_adc_workq);
 	k_work_queue_start(&app_adc_workq, app_adc_workq_stack_area,K_THREAD_STACK_SIZEOF(app_adc_workq_stack_area), APP_ADC_PRIORITY,NULL);
+
+	//get the pointer to calibration settings
+	ctx.calibration = get_calibration();
 	return 0;
 }

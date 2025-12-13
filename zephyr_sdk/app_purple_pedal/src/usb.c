@@ -57,22 +57,27 @@ LOG_MODULE_REGISTER(usb, CONFIG_APP_LOG_LEVEL);
 			HID_USAGE(0x31), \
 			HID_USAGE(0x32), \
 			HID_USAGE(0x35), \
-			HID_LOGICAL_MIN16(0x00, 0x80),	\
-			HID_LOGICAL_MAX16(0xff, 0x7f),	\
+			HID_LOGICAL_MIN8(0x00),	\
+			HID_LOGICAL_MAX16(0xff, 0xff),	\
 			HID_REPORT_SIZE(16),	\
 			HID_REPORT_COUNT(3),	\
 			/*   Input (Data,Var,Abs)*/\
 			HID_INPUT(0x02),		\
 			/* feature report*/ \
 			HID_USAGE_PAGE_2BYTE(0x00, 0xff), \
-			HID_REPORT_ID(GAMEPAD_FEATURE_REPORT_ID), \
-			HID_USAGE(0x31), \
-			HID_USAGE(0x32), \
-			HID_USAGE(0x35), \
-			HID_LOGICAL_MIN16(0x00, 0x80),	\
-			HID_LOGICAL_MAX16(0xff, 0x7f),	\
-			HID_REPORT_SIZE(16),	\
-			HID_REPORT_COUNT(3), \
+			HID_REPORT_ID(GAMEPAD_FEATURE_REPORT_RAW_VAL_ID), \
+			HID_USAGE(0x20), \
+			HID_LOGICAL_MIN8(0x00),	\
+			HID_LOGICAL_MAX16(0xff, 0x00),	\
+			HID_REPORT_SIZE(8),	\
+			HID_REPORT_COUNT(sizeof(struct gamepad_feature_rpt_raw_val)-1), \
+			HID_FEATURE(0x02), \
+			HID_REPORT_ID(GAMEPAD_FEATURE_REPORT_CALIB_ID), \
+			HID_USAGE(0x21), \
+			HID_LOGICAL_MIN8(0x00),	\
+			HID_LOGICAL_MAX16(0xff, 0x00),	\
+			HID_REPORT_SIZE(8),	\
+			HID_REPORT_COUNT(sizeof(struct gamepad_feature_rpt_calib)-1), \
 			HID_FEATURE(0x02), \
 	HID_END_COLLECTION,			\
 }
@@ -126,21 +131,57 @@ static int gamepad_get_report(const struct device *dev,const uint8_t type, const
 		return 0;
 	}
 	
-	if(len >= sizeof(struct gamepad_feature_rpt)){
-		struct gamepad_feature_rpt *rpt = buf;
-		rpt->report_id = 2;
-		rpt->accelerator_raw = 3;
-		rpt->brake_raw = 4;
-		rpt->clutch_raw = 5;
-		rpt->offset = 6;
-		rpt->scale = 7;
-		return sizeof(struct gamepad_feature_rpt);
-	}
-	else{
-		LOG_ERR("len too small");
-		return 0;
+	if(id == GAMEPAD_FEATURE_REPORT_RAW_VAL_ID){
+		if(len >= sizeof(struct gamepad_feature_rpt_raw_val)){
+			struct gamepad_feature_rpt_raw_val *rpt = (struct gamepad_feature_rpt_raw_val *)buf;
+			rpt->report_id = GAMEPAD_FEATURE_REPORT_RAW_VAL_ID;
+			rpt->accelerator_raw = 3;
+			rpt->brake_raw = 4;
+			rpt->clutch_raw = 5;
+			return sizeof(struct gamepad_feature_rpt_raw_val);
+		}
+		else{
+			LOG_ERR("len too small");
+			return 0;
+		}
 	}
 	
+	if(id == GAMEPAD_FEATURE_REPORT_CALIB_ID){
+		if(len < sizeof(struct gamepad_feature_rpt_calib)){
+			LOG_ERR("len %d <  sizeof(struct gamepad_feature_rpt_calib) %d", 
+				len, sizeof(struct gamepad_feature_rpt_calib));
+			return 0;
+		}
+		struct gamepad_feature_rpt_calib *rpt = (struct gamepad_feature_rpt_calib*)buf;
+		rpt->report_id = GAMEPAD_FEATURE_REPORT_CALIB_ID;
+		rpt->calib = *get_calibration();
+		return sizeof(struct gamepad_feature_rpt_calib);
+	}
+	
+	LOG_WRN("Get Report not implemented, Type %u ID %u", type, id);
+	return 0;
+	
+}
+
+
+static int gamepad_set_report(const struct device *dev, const uint8_t type, const uint8_t id, const uint16_t len, const uint8_t *const buf)
+{
+	if(type != HID_REPORT_TYPE_FEATURE || id != GAMEPAD_FEATURE_REPORT_CALIB_ID){
+		LOG_WRN("Get Report not implemented, Type %u ID %u", type, id);
+		return 0;
+	}
+
+	if (len != sizeof(struct gamepad_feature_rpt_calib)){
+		LOG_ERR("len %d does not equal to  sizeof(struct gamepad_feature_rpt_calib) %d",
+				len, sizeof(struct gamepad_feature_rpt_calib));
+		return 0;
+	}
+	struct gamepad_feature_rpt_calib *rpt = (struct gamepad_feature_rpt_calib *)buf;
+	int err = set_calibration(&rpt->calib);
+	if(err){
+		LOG_ERR("set_calibration() returns %d", err);
+	}
+	return 0;
 }
 
 static void gamepad_input_report_done(const struct device *dev, const uint8_t *const report)
@@ -151,11 +192,6 @@ static void gamepad_input_report_done(const struct device *dev, const uint8_t *c
 	k_sem_give(&sem_hid_in_buf);
 }
 
-static int gamepad_set_report(const struct device *dev, const uint8_t type, const uint8_t id, const uint16_t len, const uint8_t *const buf)
-{
-	LOG_DBG("called");
-	return 0;
-}
 
 static void gamepad_set_idle(const struct device *dev, const uint8_t id, const uint32_t duration)
 {

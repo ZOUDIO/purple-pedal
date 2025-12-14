@@ -14,6 +14,14 @@ ZBUS_CHAN_DEFINE(gamepad_report_out_chan,  /* Name */
 		 ZBUS_MSG_INIT(.report_id=GAMEPAD_INPUT_REPORT_ID, .accelerator=0, .brake=0, .clutch=0)		      /* Initial value {0} */
 );
 
+ZBUS_CHAN_DEFINE(gamepad_feature_report_raw_val_chan,  /* Name */
+		 struct gamepad_feature_rpt_raw_val, /* Message type */
+		 NULL, /* Validator */
+		 NULL, /* User data */
+		 ZBUS_OBSERVERS_EMPTY, /* observers */
+		 ZBUS_MSG_INIT(.report_id=GAMEPAD_FEATURE_REPORT_RAW_VAL_ID, .accelerator_raw=0, .brake_raw=0, .clutch_raw=0)		      /* Initial value {0} */
+);
+
 ZBUS_CHAN_DEFINE(gamepad_status_chan,  /* Name */
 		 enum app_state, /* Message type */
 		 NULL, /* Validator */

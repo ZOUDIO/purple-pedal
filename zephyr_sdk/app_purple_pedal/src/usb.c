@@ -57,8 +57,9 @@ LOG_MODULE_REGISTER(usb, CONFIG_APP_LOG_LEVEL);
 			HID_USAGE(0x31), \
 			HID_USAGE(0x32), \
 			HID_USAGE(0x35), \
+			/*windows and DiView recognize below min/max as 0~65535 range correctly*/ \
 			HID_LOGICAL_MIN8(0x00),	\
-			HID_LOGICAL_MAX16(0xff, 0xff),	\
+			HID_LOGICAL_MAX32(0xff, 0xff, 0x00, 0x00),	\
 			HID_REPORT_SIZE(16),	\
 			HID_REPORT_COUNT(3),	\
 			/*   Input (Data,Var,Abs)*/\
@@ -124,8 +125,11 @@ static void gamepad_iface_ready(const struct device *dev, const bool ready)
 	post_usb_event(event);
 }
 
+ZBUS_CHAN_DECLARE(gamepad_feature_report_raw_val_chan);
+
 static int gamepad_get_report(const struct device *dev,const uint8_t type, const uint8_t id, const uint16_t len,uint8_t *const buf)
 {
+	//note that this function is called from usb_thread
 	if(type != HID_REPORT_TYPE_FEATURE){
 		LOG_WRN("Get Report not implemented, Type %u ID %u", type, id);
 		return 0;
@@ -133,11 +137,16 @@ static int gamepad_get_report(const struct device *dev,const uint8_t type, const
 	
 	if(id == GAMEPAD_FEATURE_REPORT_RAW_VAL_ID){
 		if(len >= sizeof(struct gamepad_feature_rpt_raw_val)){
-			struct gamepad_feature_rpt_raw_val *rpt = (struct gamepad_feature_rpt_raw_val *)buf;
-			rpt->report_id = GAMEPAD_FEATURE_REPORT_RAW_VAL_ID;
-			rpt->accelerator_raw = 3;
-			rpt->brake_raw = 4;
-			rpt->clutch_raw = 5;
+			int err = zbus_chan_read(&gamepad_feature_report_raw_val_chan, buf, ADC_SAMPLE_PERIOD);
+			if(err){
+				LOG_ERR("zbus_chan_read() returns %d", err);
+				return 0;
+			}
+			// struct gamepad_feature_rpt_raw_val *rpt = (struct gamepad_feature_rpt_raw_val *)buf;
+			// rpt->report_id = GAMEPAD_FEATURE_REPORT_RAW_VAL_ID;
+			// rpt->accelerator_raw = 3;
+			// rpt->brake_raw = 4;
+			// rpt->clutch_raw = 5;
 			return sizeof(struct gamepad_feature_rpt_raw_val);
 		}
 		else{

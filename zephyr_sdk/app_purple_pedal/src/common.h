@@ -10,9 +10,15 @@ extern "C" {
 #define ADC_CHANNEL_COUNT DT_CHILD_NUM(ADC_NODE_ID)
 #define ADC_SAMPLE_PERIOD K_MSEC(10)
 
-//below are arbitrary settings for nRF52840. STM32 might differ
 #define CONFIG_SEQUENCE_SAMPLES (1)
 #define ADC_NUM_BITS (24)
+#define ADC_GAIN (128)
+#define ADC_VAL_MAX (BIT_MASK(ADC_NUM_BITS))
+#define ADC_VAL_MID (BIT(ADC_NUM_BITS-1))
+
+#define LOAD_CELL_MV_V (1)
+#define LOAD_CELL_DEFAULT_SCALE ((uint64_t)ADC_VAL_MID * ADC_GAIN * LOAD_CELL_MV_V / 1000ULL)
+#define LOAD_CELL_DEFAULT_OFFSET (ADC_VAL_MID)
 
 #define USB_DEVICE_CONTROLLER_ID DT_NODELABEL(zephyr_udc0)
 #define HID_DEVICE_ID DT_NODELABEL(hid_dev_0)
@@ -53,14 +59,14 @@ struct gamepad_calibration{
 
 struct gamepad_report_out{
 	uint8_t report_id;
-    int16_t accelerator;
-    int16_t brake;
-    int16_t clutch;
+    uint16_t accelerator;
+    uint16_t brake;
+    uint16_t clutch;
 }__packed;
 
 struct gamepad_feature_rpt_raw_val{
 	uint8_t report_id;
-	uint32_t accelerator_raw: 24;
+	uint32_t accelerator_raw: 24; //need to define as uint32_t otherwise c compiler will process sign bit
 	uint32_t brake_raw: 24;
 	uint32_t clutch_raw:24;
 }__packed;

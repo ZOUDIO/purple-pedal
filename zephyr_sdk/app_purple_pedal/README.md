@@ -144,6 +144,10 @@ static int adc_ad7124_filter_cfg(const struct device *dev, const struct ad7124_c
 
 ## Implementing Calibration function
 
+Considering loadcell may have initial offset, and offset can be negative differential voltage,
+ADC shall be configured as bipolar operation so that it can detect and compensate this offset.
+
+
 Calibration usese USB HID feature report.
 
 HIDApiTest tool can be used for windows to debug and send / receive HID feature report:

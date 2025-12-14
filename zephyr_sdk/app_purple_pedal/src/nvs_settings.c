@@ -13,8 +13,8 @@ LOG_MODULE_REGISTER(nvs_settings, CONFIG_APP_LOG_LEVEL);
 #define SETTING_CALIBRATION_LEN (sizeof(struct gamepad_calibration))
 
 static struct gamepad_calibration gp_calibration = {
-    .offset = {1,2,3},
-    .scale = {5,6,7},
+    .offset = {[0 ... SETTING_INDEX_TOTAL-1] = LOAD_CELL_DEFAULT_OFFSET},
+    .scale = {[0 ... SETTING_INDEX_TOTAL-1] = LOAD_CELL_DEFAULT_SCALE},
 };
 
 int gampepad_setting_handle_set(const char *name, size_t len, settings_read_cb read_cb, void *cb_arg)

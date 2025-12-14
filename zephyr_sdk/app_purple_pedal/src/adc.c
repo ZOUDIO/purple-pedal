@@ -26,6 +26,7 @@ LOG_MODULE_REGISTER(app_adc, CONFIG_APP_LOG_LEVEL);
 #define APP_ADC_PRIORITY 5
 
 ZBUS_CHAN_DECLARE(gamepad_report_out_chan);
+ZBUS_CHAN_DECLARE(gamepad_feature_report_raw_val_chan);
 
 struct app_adc_ctx{
 	struct k_work_q *workq;
@@ -35,7 +36,7 @@ struct app_adc_ctx{
 	const struct adc_sequence_options adc_seq_opt;
 	struct adc_sequence seq;
 	const struct gamepad_calibration *calibration;
-	uint32_t channel_reading[CONFIG_SEQUENCE_SAMPLES][ADC_CHANNEL_COUNT];
+	int32_t channel_reading[CONFIG_SEQUENCE_SAMPLES][ADC_CHANNEL_COUNT];
 } ;
 
 // enum adc_action adc_seq_cb(const struct device *dev,const struct adc_sequence *sequence,uint16_t sampling_index)
@@ -106,6 +107,14 @@ static struct app_adc_ctx ctx = {
 // 	LOG_DBG("app_adc_work_handler() ended");
 // }
 
+inline uint16_t raw_to_uint16(int32_t raw, int32_t offset, int32_t scale)
+{
+	if(raw < offset) return 0;
+	int64_t val_64 = ((int64_t)(raw - offset)) * UINT16_MAX / scale;
+	return (val_64 > UINT16_MAX)? UINT16_MAX : (uint16_t)val_64;
+}
+
+
 static void app_adc_work_handler(struct k_work *work)
 {
 	struct app_adc_ctx *ctx = CONTAINER_OF(work, struct app_adc_ctx, work);
@@ -121,22 +130,43 @@ static void app_adc_work_handler(struct k_work *work)
 	// 	.clutch = (int64_t)ctx->channel_reading[0][2] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN) + GAMEPAD_REPORT_VALUE_MIN,
 	// };
 
+	// struct gamepad_report_out rpt = {
+	// 	.report_id = GAMEPAD_INPUT_REPORT_ID,
+	// 	.accelerator = 
+	// 	((int64_t)(ctx->channel_reading[0][0] - ADC_VAL_MID))
+	// 	*32768
+	// 	/LOAD_CELL_MAX,
+
+	// 	.brake = 
+	// 	((int64_t)(ctx->channel_reading[0][1] - ADC_VAL_MID))
+	// 	*32768
+	// 	/LOAD_CELL_MAX,
+
+	// 	.clutch = 
+	// 	((int64_t)(ctx->channel_reading[0][2] - ADC_VAL_MID))
+	// 	*32768
+	// 	/LOAD_CELL_MAX,
+	// };
+
+	struct gamepad_feature_rpt_raw_val rpt_raw_val = {
+		.report_id = GAMEPAD_FEATURE_REPORT_RAW_VAL_ID,
+		.accelerator_raw = ctx->channel_reading[0][SETTING_INDEX_ACCELERATOR],
+		.brake_raw = ctx->channel_reading[0][SETTING_INDEX_BRAKE],
+		.clutch_raw = ctx->channel_reading[0][SETTING_INDEX_CLUTCH],
+	};
+
 	struct gamepad_report_out rpt = {
 		.report_id = GAMEPAD_INPUT_REPORT_ID,
 		.accelerator = 
-		((int64_t)(ctx->channel_reading[0][0] - ADC_VAL_MID))
-		*32768
-		/LOAD_CELL_MAX,
-
-		.brake = 
-		((int64_t)(ctx->channel_reading[0][1] - ADC_VAL_MID))
-		*32768
-		/LOAD_CELL_MAX,
-
-		.clutch = 
-		((int64_t)(ctx->channel_reading[0][2] - ADC_VAL_MID))
-		*32768
-		/LOAD_CELL_MAX,
+			raw_to_uint16(rpt_raw_val.accelerator_raw, 
+					ctx->calibration->offset[SETTING_INDEX_ACCELERATOR], 
+					ctx->calibration->scale[SETTING_INDEX_ACCELERATOR]),
+		.brake = raw_to_uint16(rpt_raw_val.brake_raw, 
+					ctx->calibration->offset[SETTING_INDEX_BRAKE], 
+					ctx->calibration->scale[SETTING_INDEX_BRAKE]),
+		.clutch = raw_to_uint16(rpt_raw_val.clutch_raw, 
+					ctx->calibration->offset[SETTING_INDEX_CLUTCH], 
+					ctx->calibration->scale[SETTING_INDEX_CLUTCH]),
 	};
 	//LOG_INF("gamepad report: accelerator = %d, brake = %d, clutch = %d",rpt.accelerator, rpt.brake, rpt.clutch);
 
@@ -147,10 +177,14 @@ static void app_adc_work_handler(struct k_work *work)
 	// };
 	//int64_t acc = (int64_t)ctx->channel_reading[0][0] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN);
 	//LOG_ERR("acc(%lld)\n", (ADC_VAL_MAX - ADC_VAL_MIN));
-	err = zbus_chan_pub(&gamepad_report_out_chan, &rpt, K_MSEC(2));
+	err = zbus_chan_pub(&gamepad_report_out_chan, &rpt, ADC_SAMPLE_PERIOD);
 	if (err < 0){
-		LOG_ERR("zbus_chan_pub() error (%d)\n", err);
-	}		
+		LOG_ERR("zbus_chan_pub(&gamepad_report_out_chan) error (%d)\n", err);
+	}
+	err = zbus_chan_pub(&gamepad_feature_report_raw_val_chan, &rpt_raw_val, ADC_SAMPLE_PERIOD);
+	if (err < 0){
+		LOG_ERR("zbus_chan_pub(&gamepad_feature_report_raw_val_chan) error (%d)\n", err);
+	}				
 	//LOG_DBG("app_adc_work_handler() ended");
 }
 

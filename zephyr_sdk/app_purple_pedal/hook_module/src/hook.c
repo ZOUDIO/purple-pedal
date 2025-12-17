@@ -20,8 +20,8 @@ LOG_MODULE_REGISTER(hook, CONFIG_MCUBOOT_LOG_LEVEL);
 //#define PWM_LED_STATUS_NODE_ID	 DT_NODELABEL(pwmleds)
 
 //TODO: use PWM LED will make shell UART slow and missing character on NRF52. So prefer to use GPIO LED.
-//#define PWM_LED_STATUS_NODE_ID	 DT_INST(0, pwm_leds) //this applies for nRF52840dk
-#define PWM_LED_STATUS_NODE_ID	 DT_INST(0, gpio_leds) //this applies for nRF52840dk
+#define PWM_LED_STATUS_NODE_ID	 DT_INST(0, pwm_leds) //this applies for nRF52840dk
+//#define PWM_LED_STATUS_NODE_ID	 DT_INST(0, gpio_leds) //this applies for nRF52840dk
 #define NUM_STATUS_LED DT_CHILD_NUM(PWM_LED_STATUS_NODE_ID)
 static const struct device *led_pwm_status = DEVICE_DT_GET(PWM_LED_STATUS_NODE_ID);
 
@@ -31,12 +31,12 @@ struct status_led_pattern{
 	uint32_t delay_off[NUM_STATUS_LED];
 };
 
-const struct status_led_pattern pattern = {.delay_on = {125}, .delay_off = {125}};
+const struct status_led_pattern pattern = {.delay_on = {0,0,100}, .delay_off = {200,200,100}};
 
 void mcuboot_status_change(mcuboot_status_type_t status)
 {
 	//printk("mcuboot_status: %d\n", status);
-    LOG_ERR("mcuboot_status: %d\n", status);
+    LOG_INF("mcuboot_status: %d\n", status);
 	int err;
 	for(uint32_t i=0; i<NUM_STATUS_LED; i++){
 		err = led_blink(led_pwm_status, i, pattern.delay_on[i], pattern.delay_off[i]);

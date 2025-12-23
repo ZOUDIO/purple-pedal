@@ -1,4 +1,4 @@
-# Purple Pedal Application
+# 1. Purple Pedal Application
 
 ## Build the application
 ```shell
@@ -192,7 +192,7 @@ with DiView + PS5 dualsense, Rx and Ry triggers are single directional value, wi
 0x95, 0x06,        //   Report Count (6)
 0x81, 0x02,        //   Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
 ```
-# How to use the Binary file package:
+# 2. How to use the Binary file package:
 
 There are 3 files:
 
@@ -271,6 +271,132 @@ Firmware version can also be downgraded, using below command to program app_ver0
 
 ```
 .\dfu-util.exe -d 2fe3:0005 --alt 0 --download app_ver01.signed.bin
+```
+
+# 3. How to perform calibration to the pedal
+
+The goal of the calibration process is to compensate the loadcell offset and sensitivity.
+The calibration process requires user collaboration to interact with a PC application, 
+and follow the instruction to unpress the pedal and press the pedal,
+so that the PC application can read the loadcell raw measurements, calculate the calibration values,
+and write it into the PurplePedal non-volatile memory.
+
+The PurplePedal side only provides the methods to read the raw loadcell readings and to write the calibration coefficients. The user interaction and coefficient calculation shall be implemented in PC software.
+
+The PurplePedal provides 3 report IDs in total, 
+
+- report ID 0x01 is normal HID input report. 
+- report ID 0x02 is the feature report to read the raw loadcell
+- report ID 0x03 is the feature report to write the calibration setting.
+
+C code snippet is show as below:
+```c
+#define GAMEPAD_INPUT_REPORT_ID (0x01)
+#define GAMEPAD_FEATURE_REPORT_RAW_VAL_ID (0x02)
+#define GAMEPAD_FEATURE_REPORT_CALIB_ID (0x03)
+```
+
+These feature reports can be read/written with Windows API. Here we show the manual process to perform the calibration by using HIDApiTest tool. This tool can be used for windows to debug and send / receive HID feature report, below is the download link:
+
+https://github.com/todbot/hidapitester/releases/tag/v0.5
+
+Download the zip file for windows-x84_64, and unzip it in Windows. 
+This is a command-line tool, use Windows shell to run it.
+
+## Step 1: get the raw loadcell reading when pedal is not pressed to calculate the Offset value
+
+Use hidapitester command to read the feature report 0x02 with raw ADC readings:
+
+```sh
+.\hidapitester.exe --vidpid 2FE3/0005 --usagePage 0x1 --usage 0x04 --open --length 10 --read-feature 2
+Opening device, vid/pid:0x2FE3/0x0005, usagePage/usage: 1/4
+Device opened
+Reading 10-byte feature report, report_id 2...read 10 bytes:
+ 02 83 03 7E B2 26 00 C2 26 00
+Closing device
+```
+
+Note that the result is 10-byte, the first byte is report ID, 
+followed by 3x 24bit RAW ADC value from channel 1 2 and 3.
+The 24bit value is in little-endian format.
+```
+02 			//report ID
+83 03 7E 	//channel 1 raw ADC value (low byte, middle byte, high byte)
+B2 26 00  	//channel 2 raw ADC value
+C2 26 00 	//channel 3 raw ADC value
+```
+
+Multiple readings can be taken from the pedal to calculate the average number for each pedal when the pedal is not pressed. This average value is called "Offset".
+
+$$Offset=Avg_unpressed$$
+
+## Step 2: get the raw loadcell reading when pedal is fully pressed to calculate the Scale value
+
+Fully press the pedal and use the same process as described in Step 1 to read the feature report 0x02 and get the raw ADC readings.
+
+Multiple readings can be taken from the pedal to calculate the average number for each pedal when the pedal is fully pressed.  The average value when pedal is pressed minused by average value when pedal is not pressed can be taken as the scale value.
+
+If we want to have some "margin" in the pedal press, it is also possible to multiply this average value by 105% and take the result as final "Scale" value.
+
+$$Scale=(Avg_pressed - Avg_unpressed)*margin%$$
+
+## Step 3: Write the calibration 
+
+The original calibration number can be read by below command:
+```sh
+.\hidapitester.exe --vidpid 2FE3/0005 --usagePage 0x1 --usage 0x04 --open --length 25 --read-feature 3
+Opening device, vid/pid:0x2FE3/0x0005, usagePage/usage: 1/4
+Device opened
+Reading 25-byte feature report, report_id 3...read 25 bytes:
+ 03 00 00 80 00 00 00 80 00 00 00 80 00 4D 62 10 00 4D 62 10 00 4D 62 10 00
+Closing device
+```
+Note that the result is 25-byte format, with 3 offset values and 3 scale values.
+Offset and scale values are provided in 32-bit little-endian format.
+```
+03 
+00 00 80 00 	//channel 1 offset value, 32bit, little-endian
+00 00 80 00  	//channel 2 offset value, 32bit, little-endian
+00 00 80 00  	//channel 3 offset value, 32bit, little-endian
+4D 62 10 00  	//channel 1 scale value, 32bit, little-endian
+4D 62 10 00  	//channel 2 scale value, 32bit, little-endian
+4D 62 10 00 	//channel 3 scale value, 32bit, little-endian
+```
+
+New calibration value can be written by below command:
+
+```sh
+ .\hidapitester.exe --vidpid 2FE3/0005 --usagePage 0x1 --usage 0x04 --open --send-feature 3,0x00,0x03,0x7E,0x00,0x00,0x03,0x7E,0x00,0x00,0x03,0x7E,0x00,0x00,0x54,0x04,0x00,0x00,0x54,0x04,0x00,0x00,0x54,0x04,0x00
+```
+
+After that, the new calibration value shall take effect
+
+## How the PurplePedal firmware uses Scale and Offset value
+
+PurplePedal USB HID outputs 0~65535 pedal value. The 24bit raw ADC value is converted to 0~65535 range using below C code:
+
+```c
+inline uint16_t raw_to_uint16(int32_t raw, int32_t offset, int32_t scale)
+{
+	if(raw < offset) return 0;
+	int64_t val_64 = ((int64_t)(raw - offset)) * UINT16_MAX / scale;
+	return (val_64 > UINT16_MAX)? UINT16_MAX : (uint16_t)val_64;
+}
+```
+
+## Default Offset and Scale values
+
+For a newly programmed device that is never calibrated, the firmware includes default offset and scale value.
+Note that these values are calculated using the testing loadcell and can be updated according to the loadcell choice in final product.
+
+```sh
+.\hidapitester.exe --vidpid 2FE3/0005 --usagePage 0x1 --usage 0x04 --open --read-feature 3
+Opening device, vid/pid:0x2FE3/0x0005, usagePage/usage: 1/4
+Device opened
+Reading 64-byte feature report, report_id 3...read 25 bytes:
+ 03 00 00 80 00 00 00 80 00 00 00 80 00 4D 62 10 00 4D 62 10 00 4D 62 10 00 00 00 00 00 00 00 00
+ 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+Closing device
 ```
 
 # reference documents

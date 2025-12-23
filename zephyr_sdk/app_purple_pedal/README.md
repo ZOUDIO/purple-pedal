@@ -328,7 +328,7 @@ C2 26 00 	//channel 3 raw ADC value
 
 Multiple readings can be taken from the pedal to calculate the average number for each pedal when the pedal is not pressed. This average value is called "Offset".
 
-$$Offset=Avg_unpressed$$
+$$Offset=Avg_{unpressed}$$
 
 ## Step 2: get the raw loadcell reading when pedal is fully pressed to calculate the Scale value
 
@@ -338,7 +338,7 @@ Multiple readings can be taken from the pedal to calculate the average number fo
 
 If we want to have some "margin" in the pedal press, it is also possible to multiply this average value by 105% and take the result as final "Scale" value.
 
-$$Scale=(Avg_pressed - Avg_unpressed)*margin%$$
+$$Scale=(Avg_{pressed} - Avg_{unpressed})*margin%$$
 
 ## Step 3: Write the calibration 
 

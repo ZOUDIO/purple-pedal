@@ -373,7 +373,7 @@ After that, the new calibration value shall take effect
 
 ## How the PurplePedal firmware uses Scale and Offset value
 
-PurplePedal USB HID outputs 0~65535 pedal value. The 24bit raw ADC value is converted to 0~65535 range using below C code:
+PurplePedal USB HID outputs 0-65535 pedal value. The 24bit raw ADC value is converted to 0-65535 range using below C code:
 
 ```c
 inline uint16_t raw_to_uint16(int32_t raw, int32_t offset, int32_t scale)
@@ -383,6 +383,7 @@ inline uint16_t raw_to_uint16(int32_t raw, int32_t offset, int32_t scale)
 	return (val_64 > UINT16_MAX)? UINT16_MAX : (uint16_t)val_64;
 }
 ```
+The above code guarantees output 0-65535, any value lower than 0 will be treated as 0, any value greater than 65535 will be treated as 65535.
 
 ## Default Offset and Scale values
 

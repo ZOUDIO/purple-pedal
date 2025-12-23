@@ -30,7 +30,7 @@
 &adc_ad7124 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-
+	spi-max-frequency = <1000000>;
     //pin definitions in zephyr/dt-bindings/adc/ad7124-adc.h
     //matches datasheet table 74: https://www.analog.com/media/en/technical-documentation/data-sheets/AD7124-4.pdf
 	adc-mode = <0>;	//continuous mode
@@ -38,6 +38,7 @@
 	refbuf-enable-mask=<7>;
 	bipolar-mask=<7>; //bipolar mode allows input range 0~AVdd
 	filter-type-mask=<7>;
+	inbuf-enable-mask=<7>;
 	channel@0 {
 		reg = <0>;
 		zephyr,gain = "ADC_GAIN_128";

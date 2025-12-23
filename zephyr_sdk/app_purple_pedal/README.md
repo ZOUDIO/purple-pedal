@@ -400,7 +400,7 @@ Reading 64-byte feature report, report_id 3...read 25 bytes:
 Closing device
 ```
 
-# reference documents
+# 4. reference documents
 
 HID specification:
 

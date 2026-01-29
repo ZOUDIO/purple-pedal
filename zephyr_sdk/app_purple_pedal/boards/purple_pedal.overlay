@@ -5,7 +5,7 @@
 		label = "PurplePedal";
 		protocol-code = "none";
 		in-report-size = <64>;
-		in-polling-period-us = <10000>;
+		in-polling-period-us = <1000>;
 	};
 
 	aliases {

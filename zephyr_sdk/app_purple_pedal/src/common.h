@@ -8,7 +8,9 @@ extern "C" {
 
 #define ADC_NODE_ID DT_ALIAS(pedal_adc)
 #define ADC_CHANNEL_COUNT DT_CHILD_NUM(ADC_NODE_ID)
-#define ADC_SAMPLE_PERIOD K_MSEC(10)
+// NickR: Set sample period to 1kHZ instead of 100Hz
+//#define ADC_SAMPLE_PERIOD K_MSEC(10)
+#define ADC_SAMPLE_PERIOD K_USEC(1000)
 
 #define CONFIG_SEQUENCE_SAMPLES (1)
 #define ADC_NUM_BITS (24)

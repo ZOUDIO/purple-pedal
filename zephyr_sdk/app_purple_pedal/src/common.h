@@ -22,6 +22,11 @@ extern "C" {
 #define LOAD_CELL_DEFAULT_SCALE ((uint64_t)ADC_VAL_MID * ADC_GAIN * LOAD_CELL_MV_V / 1000ULL)
 #define LOAD_CELL_DEFAULT_OFFSET (ADC_VAL_MID)
 
+// NickR: --- EMA FILTER VARIABLES ---
+// Strength: 0 (No filter) to 255 (Max lag). 
+// 50 is a good balance for sim racing (smooth but fast).
+#define FILTER_ALPHA 50
+
 #define USB_DEVICE_CONTROLLER_ID DT_NODELABEL(zephyr_udc0)
 #define HID_DEVICE_ID DT_NODELABEL(hid_dev_0)
 
@@ -48,9 +53,9 @@ enum app_state{
 };
 
 enum gamepad_setting_index{
-	SETTING_INDEX_ACCELERATOR = 0,
+	SETTING_INDEX_CLUTCH = 0,
 	SETTING_INDEX_BRAKE,
-	SETTING_INDEX_CLUTCH,
+	SETTING_INDEX_ACCELERATOR,
 	SETTING_INDEX_TOTAL,
 };
 
@@ -61,16 +66,16 @@ struct gamepad_calibration{
 
 struct gamepad_report_out{
 	uint8_t report_id;
-    uint16_t accelerator;
+	uint16_t clutch;
     uint16_t brake;
-    uint16_t clutch;
+	uint16_t accelerator;
 }__packed;
 
 struct gamepad_feature_rpt_raw_val{
 	uint8_t report_id;
-	uint32_t accelerator_raw: 24; //need to define as uint32_t otherwise c compiler will process sign bit
+	uint32_t clutch_raw: 24; //need to define as uint32_t otherwise c compiler will process sign bit
 	uint32_t brake_raw: 24;
-	uint32_t clutch_raw:24;
+	uint32_t accelerator_raw:24;
 }__packed;
 
 struct gamepad_feature_rpt_calib{

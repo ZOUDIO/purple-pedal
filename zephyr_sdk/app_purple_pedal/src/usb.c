@@ -53,10 +53,10 @@ LOG_MODULE_REGISTER(usb, CONFIG_APP_LOG_LEVEL);
 	HID_USAGE(HID_USAGE_GEN_DESKTOP_JOYSTICK),	\
 	HID_COLLECTION(HID_COLLECTION_APPLICATION),	\
 			HID_REPORT_ID(GAMEPAD_INPUT_REPORT_ID), \
-			/* Axis Usage of Y - Accelerator, Rz - Brake, Z - Clutch */				\
-			HID_USAGE(0x31), \
-			HID_USAGE(0x32), \
-			HID_USAGE(0x35), \
+			/* Axis Usage of Y - Accelerator, Rz - Brake, Z - Clutch - NickR: wrong mapping */				\
+			HID_USAGE(0x35),  /* 0x35 = Z-rotation, 0x34 and 0x36 don't work/exist */ \
+			HID_USAGE(0x32),  /* Z-axis */ \
+			HID_USAGE(0x31),  /* Y-axis */ \
 			/*windows and DiView recognize below min/max as 0~65535 range correctly*/ \
 			HID_LOGICAL_MIN8(0x00),	\
 			HID_LOGICAL_MAX32(0xff, 0xff, 0x00, 0x00),	\

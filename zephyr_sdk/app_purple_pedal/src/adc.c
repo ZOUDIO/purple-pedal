@@ -11,6 +11,7 @@ LOG_MODULE_REGISTER(app_adc, CONFIG_APP_LOG_LEVEL);
 // #define ADC_NODE_ID DT_ALIAS(pedal_adc)
 // #define ADC_CHANNEL_COUNT DT_CHILD_NUM(ADC_NODE_ID)
 // #define ADC_SAMPLE_PERIOD K_MSEC(10)
+// #define ADC_SAMPLE_PERIOD K_USEC(1000) // NickR: Already in common.h
 
 // #define CONFIG_SEQUENCE_SAMPLES (1)
 // #define ADC_NUM_BITS (12)
@@ -24,6 +25,21 @@ LOG_MODULE_REGISTER(app_adc, CONFIG_APP_LOG_LEVEL);
 
 #define APP_ADC_STACK_SIZE 4096
 #define APP_ADC_PRIORITY 5
+
+// Storage for the previous value of each channel (EMA filtering)
+static int32_t ema_state[3] = {0, 0, 0};
+
+// --- HELPER FUNCTION ---
+int32_t apply_ema_filter(int ch_idx, int32_t raw_new) {
+    // Standard EMA Formula: Output = Alpha * New + (1-Alpha) * Old
+    // We use bit shifting (>>8 is /256) to avoid slow floating point math
+    int64_t filtered = ((int64_t)FILTER_ALPHA * raw_new 
+                      + (int64_t)(256 - FILTER_ALPHA) * ema_state[ch_idx]);
+    
+    // Update state and return
+    ema_state[ch_idx] = (int32_t)(filtered >> 8); 
+    return ema_state[ch_idx];
+}
 
 ZBUS_CHAN_DECLARE(gamepad_report_out_chan);
 ZBUS_CHAN_DECLARE(gamepad_feature_report_raw_val_chan);
@@ -124,49 +140,45 @@ static void app_adc_work_handler(struct k_work *work)
 	if (err < 0){
 		LOG_ERR("adc_read() error (%d)\n", err);
 	}
-	// struct gamepad_report_out rpt = {
-	// 	.accelerator = (int64_t)ctx->channel_reading[0][0] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN) + GAMEPAD_REPORT_VALUE_MIN,
-	// 	.brake = (int64_t)ctx->channel_reading[0][1] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN) + GAMEPAD_REPORT_VALUE_MIN,
-	// 	.clutch = (int64_t)ctx->channel_reading[0][2] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN) + GAMEPAD_REPORT_VALUE_MIN,
-	// };
+	
+	// NickR: Extract Raw Values
+	int32_t raw_clu = ctx->channel_reading[0][SETTING_INDEX_CLUTCH];
+    int32_t raw_brk = ctx->channel_reading[0][SETTING_INDEX_BRAKE];
+    int32_t raw_acc = ctx->channel_reading[0][SETTING_INDEX_ACCELERATOR];
 
-	// struct gamepad_report_out rpt = {
-	// 	.report_id = GAMEPAD_INPUT_REPORT_ID,
-	// 	.accelerator = 
-	// 	((int64_t)(ctx->channel_reading[0][0] - ADC_VAL_MID))
-	// 	*32768
-	// 	/LOAD_CELL_MAX,
+    // NickR: Apply EMA Filter
+    int32_t filt_clu = apply_ema_filter(SETTING_INDEX_CLUTCH, raw_clu);
+    int32_t filt_brk = apply_ema_filter(SETTING_INDEX_BRAKE, raw_brk);
+    int32_t filt_acc = apply_ema_filter(SETTING_INDEX_ACCELERATOR, raw_acc);
 
-	// 	.brake = 
-	// 	((int64_t)(ctx->channel_reading[0][1] - ADC_VAL_MID))
-	// 	*32768
-	// 	/LOAD_CELL_MAX,
+	// NickR: Linear output
+	uint16_t linear_clu = raw_to_uint16(filt_clu,
+					ctx->calibration->offset[SETTING_INDEX_CLUTCH], 
+					ctx->calibration->scale[SETTING_INDEX_CLUTCH]);
+	uint16_t linear_brk = raw_to_uint16(filt_brk,
+					ctx->calibration->offset[SETTING_INDEX_BRAKE], 
+					ctx->calibration->scale[SETTING_INDEX_BRAKE]);
+	uint16_t linear_acc = raw_to_uint16(filt_acc,
+                    ctx->calibration->offset[SETTING_INDEX_ACCELERATOR], 
+                    ctx->calibration->scale[SETTING_INDEX_ACCELERATOR]);
 
-	// 	.clutch = 
-	// 	((int64_t)(ctx->channel_reading[0][2] - ADC_VAL_MID))
-	// 	*32768
-	// 	/LOAD_CELL_MAX,
-	// };
-
+	// NickR: Changed to EMA filtered values
 	struct gamepad_feature_rpt_raw_val rpt_raw_val = {
 		.report_id = GAMEPAD_FEATURE_REPORT_RAW_VAL_ID,
-		.accelerator_raw = ctx->channel_reading[0][SETTING_INDEX_ACCELERATOR],
-		.brake_raw = ctx->channel_reading[0][SETTING_INDEX_BRAKE],
-		.clutch_raw = ctx->channel_reading[0][SETTING_INDEX_CLUTCH],
+		.clutch_raw = filt_clu,
+		.brake_raw = filt_brk,
+		.accelerator_raw = filt_acc,
+		// No EMA filtering
+		//.accelerator_raw = ctx->channel_reading[0][SETTING_INDEX_ACCELERATOR],
+		//.brake_raw = ctx->channel_reading[0][SETTING_INDEX_BRAKE],
+		//.clutch_raw = ctx->channel_reading[0][SETTING_INDEX_CLUTCH],
 	};
 
 	struct gamepad_report_out rpt = {
 		.report_id = GAMEPAD_INPUT_REPORT_ID,
-		.accelerator = 
-			raw_to_uint16(rpt_raw_val.accelerator_raw, 
-					ctx->calibration->offset[SETTING_INDEX_ACCELERATOR], 
-					ctx->calibration->scale[SETTING_INDEX_ACCELERATOR]),
-		.brake = raw_to_uint16(rpt_raw_val.brake_raw, 
-					ctx->calibration->offset[SETTING_INDEX_BRAKE], 
-					ctx->calibration->scale[SETTING_INDEX_BRAKE]),
-		.clutch = raw_to_uint16(rpt_raw_val.clutch_raw, 
-					ctx->calibration->offset[SETTING_INDEX_CLUTCH], 
-					ctx->calibration->scale[SETTING_INDEX_CLUTCH]),
+		.clutch = linear_clu,
+		.brake = linear_brk,
+		.accelerator = linear_acc,
 	};
 	//LOG_INF("gamepad report: accelerator = %d, brake = %d, clutch = %d",rpt.accelerator, rpt.brake, rpt.clutch);
 
@@ -177,11 +189,13 @@ static void app_adc_work_handler(struct k_work *work)
 	// };
 	//int64_t acc = (int64_t)ctx->channel_reading[0][0] * (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN) / (ADC_VAL_MAX - ADC_VAL_MIN);
 	//LOG_ERR("acc(%lld)\n", (ADC_VAL_MAX - ADC_VAL_MIN));
-	err = zbus_chan_pub(&gamepad_report_out_chan, &rpt, ADC_SAMPLE_PERIOD);
+	
+	// NickR: Changed to K_NO_WAIT
+	err = zbus_chan_pub(&gamepad_report_out_chan, &rpt, K_NO_WAIT); //ADC_SAMPLE_PERIOD);
 	if (err < 0){
 		LOG_ERR("zbus_chan_pub(&gamepad_report_out_chan) error (%d)\n", err);
 	}
-	err = zbus_chan_pub(&gamepad_feature_report_raw_val_chan, &rpt_raw_val, ADC_SAMPLE_PERIOD);
+	err = zbus_chan_pub(&gamepad_feature_report_raw_val_chan, &rpt_raw_val, K_NO_WAIT); //ADC_SAMPLE_PERIOD);
 	if (err < 0){
 		LOG_ERR("zbus_chan_pub(&gamepad_feature_report_raw_val_chan) error (%d)\n", err);
 	}				

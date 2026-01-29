@@ -2,6 +2,8 @@
 extern "C" {
 #endif
 
+#include <zephyr/kernel.h>
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <zephyr/usb/usbd_msg.h>
@@ -43,6 +45,8 @@ extern "C" {
 #define GAMEPAD_INPUT_REPORT_ID (0x01)
 #define GAMEPAD_FEATURE_REPORT_RAW_VAL_ID (0x02)
 #define GAMEPAD_FEATURE_REPORT_CALIB_ID (0x03)
+// NickR: Set feature report 10 for curve calibration
+#define GAMEPAD_FEATURE_REPORT_CURVE_ID  (0x0A)
 
 enum app_state{
 	APP_STATE_IDLE=0,
@@ -82,6 +86,17 @@ struct gamepad_feature_rpt_calib{
 	uint8_t report_id;
 	struct gamepad_calibration calib;
 }__packed;
+
+// NickR: Curve calibration packet structure
+// 64 Bytes total allowed
+struct gamepad_feature_rpt_curve {
+    uint8_t report_id;      // Must be 10 (0x0A)
+    uint8_t channel_index;  // 0=Clu, 1=Brk, 2=Acc
+    uint8_t chunk_index;    // 0=Start, 1=Middle, 2=End
+    uint8_t point_count;    // How many points in this packet? (Max 28)
+    uint16_t points[28];    // Payload
+	uint8_t padding[4];		// Padding for 64 bytes
+} __packed;
 
 // struct __packed app_version{
 // 	uint8_t minor;

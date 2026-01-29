@@ -5,6 +5,8 @@
 #include <zephyr/logging/log.h>
 
 #include "common.h"
+// NickR: Include curve
+#include "curve.h"
 
 LOG_MODULE_REGISTER(app_adc, CONFIG_APP_LOG_LEVEL);
 
@@ -161,6 +163,10 @@ static void app_adc_work_handler(struct k_work *work)
 	uint16_t linear_acc = raw_to_uint16(filt_acc,
                     ctx->calibration->offset[SETTING_INDEX_ACCELERATOR], 
                     ctx->calibration->scale[SETTING_INDEX_ACCELERATOR]);
+	// NickR: Curve transformation (if set)
+	uint16_t final_clu = curve_apply(SETTING_INDEX_CLUTCH, linear_clu);
+	uint16_t final_brk = curve_apply(SETTING_INDEX_BRAKE, linear_brk);
+    uint16_t final_acc = curve_apply(SETTING_INDEX_ACCELERATOR, linear_acc);
 
 	// NickR: Changed to EMA filtered values
 	struct gamepad_feature_rpt_raw_val rpt_raw_val = {
@@ -174,11 +180,12 @@ static void app_adc_work_handler(struct k_work *work)
 		//.clutch_raw = ctx->channel_reading[0][SETTING_INDEX_CLUTCH],
 	};
 
+	// NickR: Changed to EMA filtered values
 	struct gamepad_report_out rpt = {
 		.report_id = GAMEPAD_INPUT_REPORT_ID,
-		.clutch = linear_clu,
-		.brake = linear_brk,
-		.accelerator = linear_acc,
+		.clutch = final_clu,
+		.brake = final_brk,
+		.accelerator = final_acc,
 	};
 	//LOG_INF("gamepad report: accelerator = %d, brake = %d, clutch = %d",rpt.accelerator, rpt.brake, rpt.clutch);
 
@@ -294,5 +301,7 @@ int app_adc_init(void)
 
 	//get the pointer to calibration settings
 	ctx.calibration = get_calibration();
+	// NickR: Setup curve defaults
+	curve_init();
 	return 0;
 }

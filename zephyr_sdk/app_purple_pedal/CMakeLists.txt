@@ -13,5 +13,13 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(app_purple_pedal)
 
 include(${ZEPHYR_BASE}/samples/subsys/usb/common/common.cmake)
-FILE(GLOB app_sources src/*.c)
-target_sources(app PRIVATE ${app_sources})
+# FILE(GLOB app_sources src/*.c)
+# target_sources(app PRIVATE ${app_sources})
+target_sources(app PRIVATE 
+    src/adc.c
+    src/curve.c
+    src/led.c
+    src/main.c 
+    src/nvs_settings.c
+    src/usb.c
+)

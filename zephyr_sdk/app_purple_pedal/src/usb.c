@@ -13,6 +13,9 @@
 
 #include <zephyr/logging/log.h>
 
+// NickR: Include curve headers
+#include "curve.h"
+
 LOG_MODULE_REGISTER(usb, CONFIG_APP_LOG_LEVEL);
 
 /**
@@ -80,6 +83,15 @@ LOG_MODULE_REGISTER(usb, CONFIG_APP_LOG_LEVEL);
 			HID_REPORT_SIZE(8),	\
 			HID_REPORT_COUNT(sizeof(struct gamepad_feature_rpt_calib)-1), \
 			HID_FEATURE(0x02), \
+			/* NickR: Adding curve --- NEW CODE START --- */ \
+            HID_REPORT_ID(GAMEPAD_FEATURE_REPORT_CURVE_ID), \
+            HID_USAGE(0x22), \
+            HID_LOGICAL_MIN8(0x00), \
+            HID_LOGICAL_MAX16(0xff, 0x00),  \
+            HID_REPORT_SIZE(8), \
+            HID_REPORT_COUNT(sizeof(struct gamepad_feature_rpt_curve)-1), \
+            HID_FEATURE(0x02), \
+            /* --- NEW CODE END --- */ \
 	HID_END_COLLECTION,			\
 }
 //TODO: add usage page LED and LED outputs. see HUT doc section 11 LED Page.
@@ -175,6 +187,42 @@ static int gamepad_get_report(const struct device *dev,const uint8_t type, const
 
 static int gamepad_set_report(const struct device *dev, const uint8_t type, const uint8_t id, const uint16_t len, const uint8_t *const buf)
 {
+	// NickR: --- NEW CODE: Handle Curve Data (Report 10) ---
+    // We handle this FIRST. If it matches, we process and return early.
+    // This preserves the logic of your original code below for Report 3.
+if (type == HID_REPORT_TYPE_FEATURE && id == GAMEPAD_FEATURE_REPORT_CURVE_ID) {
+        if (len != sizeof(struct gamepad_feature_rpt_curve)) {
+             LOG_ERR("len %d != sizeof(struct gamepad_feature_rpt_curve) %d", 
+                     len, sizeof(struct gamepad_feature_rpt_curve));
+             return 0;
+        }
+
+        struct gamepad_feature_rpt_curve *msg = (struct gamepad_feature_rpt_curve *)buf;
+
+        // Create a local, aligned array to hold the points. 
+        // 28 is the maximum points per chunk defined in the struct.
+        uint16_t aligned_points[28];
+
+        // Use memcpy to safely move data from the potentially unaligned 
+        // packed struct to the aligned stack array.
+        size_t points_size = msg->point_count * sizeof(uint16_t);
+        if (points_size <= sizeof(aligned_points)) {
+            memcpy(aligned_points, msg->points, points_size);
+            
+            // Update the RAM using the safe, aligned pointer
+            curve_update_data(msg->channel_index, 
+                              msg->chunk_index * 28, 
+                              msg->point_count, 
+                              aligned_points);
+        }
+        
+        // TOGGLE: User sent a curve, so we ENABLE curve mode
+        curve_set_active(true); 
+        
+        return 0; // Done, skip the rest
+    }
+    // -----------------------------------------------
+
 	if(type != HID_REPORT_TYPE_FEATURE || id != GAMEPAD_FEATURE_REPORT_CALIB_ID){
 		LOG_WRN("Get Report not implemented, Type %u ID %u", type, id);
 		return 0;
@@ -190,6 +238,15 @@ static int gamepad_set_report(const struct device *dev, const uint8_t type, cons
 	if(err){
 		LOG_ERR("set_calibration() returns %d", err);
 	}
+
+	// NickR: --- NEW CODE: Disable Curve ---
+    // TOGGLE: User sent a standard Linear Calibration.
+    // We DISABLE the curve so the offset/scale works purely linearly again.
+    else {
+        curve_set_active(false);
+    }
+    // ------------------------------------
+
 	return 0;
 }
 

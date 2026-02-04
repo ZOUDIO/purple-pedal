@@ -109,7 +109,9 @@ static struct app_adc_ctx ctx = {
 
 inline uint16_t raw_to_uint16(int32_t raw, int32_t offset, int32_t scale)
 {
-	if(raw < offset) return 0;
+	//clamp the <offset values. also when loadcell is disconnect, we should output 0
+	if(raw < offset || raw >= LOAD_CELL_DISCONNECT_THRESHOLD) return 0;
+
 	int64_t val_64 = ((int64_t)(raw - offset)) * UINT16_MAX / scale;
 	return (val_64 > UINT16_MAX)? UINT16_MAX : (uint16_t)val_64;
 }
@@ -154,6 +156,9 @@ static void app_adc_work_handler(struct k_work *work)
 		.brake_raw = ctx->channel_reading[0][SETTING_INDEX_BRAKE],
 		.clutch_raw = ctx->channel_reading[0][SETTING_INDEX_CLUTCH],
 	};
+
+	// LOG_INF("rpt_raw_val.acc_raw = 0x%x, .brake_raw = 0x%x, .clutch_raw = 0x%x", 
+	// 	rpt_raw_val.accelerator_raw, rpt_raw_val.brake_raw, rpt_raw_val.clutch_raw);
 
 	struct gamepad_report_out rpt = {
 		.report_id = GAMEPAD_INPUT_REPORT_ID,

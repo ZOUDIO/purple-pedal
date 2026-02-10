@@ -245,6 +245,8 @@ cd C:\Users\<your_user_name>\Downloads\dfu-util-0.11-binaries\dfu-util-0.11-bina
 .\dfu-util.exe -d 2fe3:0005 --alt 0 --download app_ver02.signed.bin
 
 .\dfu-util.exe -d 2fe3:0005 --alt 0 --download app_ver02.signed.bin -t64
+
+.\dfu-util.exe -d 0483:a575 --alt 0 --download app_ver02.signed.bin -t64
 ```
 
 When first time running this, dfu-util will fail after device is disconnected. This is because the device appears with another VID/PID under DFU mode. Need to repeat step2 to install WinUSB driver again for this device,
@@ -400,7 +402,24 @@ Reading 64-byte feature report, report_id 3...read 25 bytes:
 Closing device
 ```
 
-# 4. reference documents
+# 4. How to read STM32 unique ID using DFU
+```
+JLinkExe
+outputs below information
+
+Cortex-M0 identified.
+1FFF7590 = 00520033 5442500E 20393951 
+J-Link>mem32 0x1FFF7590,3
+1FFF7590 = 00520033 5442500E 20393951 
+
+```
+
+Using STM32 ROM DFU we can read this:
+```
+./dfu-util -d 0483:df11 -a 0 -s 0x1FFF7590:12:force -U uid.bin
+```
+
+# 5. reference documents
 
 HID specification:
 

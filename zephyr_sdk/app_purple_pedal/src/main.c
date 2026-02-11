@@ -3,8 +3,15 @@
 #include <zephyr/logging/log.h>
 #include "common.h"
 #include "app_version.h"
+// Preset
+#include "preset.h" 
+#include "curve.h"
 
 LOG_MODULE_REGISTER(main, CONFIG_APP_LOG_LEVEL);
+
+// This is the active live RAM configuration
+struct_calibration_t current_calib;
+struct_curves_t      current_curves;
 
 ZBUS_CHAN_DEFINE(gamepad_report_out_chan,  /* Name */
 		 struct gamepad_report_out, /* Message type */
@@ -184,12 +191,48 @@ void post_usb_event(struct usb_event event)
 	}
 }
 
+static void set_factory_defaults(void)
+{
+    LOG_INF("Storage empty. Generating Linear Defaults.");
+
+    // Set Calibration Defaults
+    for(int i=0; i<3; i++) {
+        current_calib.offset[i] = LOAD_CELL_DEFAULT_OFFSET;
+        current_calib.scale[i]  = LOAD_CELL_DEFAULT_SCALE;
+    }
+
+    // Set Curve Defaults (Linear Ramp)
+    // Point 0 = 0, Point 64 = 65535.
+    // Each step is 1024 (65535 / 64 approx).
+    for (int ch = 0; ch < CURVE_CHANNELS; ch++) {
+        for (int i = 0; i < CURVE_POINTS; i++) {
+            uint32_t val = i * 1024;
+            
+            // Clamp the last point to exactly 65535 (since 64*1024 = 65536)
+            if (val > 65535) val = 65535;
+            
+            current_curves.points[ch][i] = (uint16_t)val;
+        }
+    }
+    
+    // Save these defaults so next boot is faster
+    storage_save_active(&current_calib, &current_curves);
+}
+
 int main(void)
 {
 	int err;
 
 	LOG_INF("PurplePedal App Version: v%u.%u.%u", APP_VERSION_MAJOR, APP_VERSION_MINOR, APP_PATCHLEVEL);
-	app_setting_init();
+
+
+	// Load active preset into RAM
+	storage_init();
+	// Try to load. If it fails (returns non-zero), create defaults.
+    if (storage_load_active(&current_calib, &current_curves) != 0) {
+        set_factory_defaults();
+    }
+
 	app_adc_init();
     app_usb_init();
 

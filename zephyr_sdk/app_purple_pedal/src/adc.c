@@ -53,7 +53,7 @@ struct app_adc_ctx{
 	const struct adc_channel_cfg ch_cfgs[ADC_CHANNEL_COUNT];
 	const struct adc_sequence_options adc_seq_opt;
 	struct adc_sequence seq;
-	const struct gamepad_calibration *calibration;
+	// const struct gamepad_calibration *calibration; // We now take the global global current_calib value
 	int32_t channel_reading[CONFIG_SEQUENCE_SAMPLES][ADC_CHANNEL_COUNT];
 } ;
 
@@ -155,14 +155,14 @@ static void app_adc_work_handler(struct k_work *work)
 
 	// NickR: Linear output
 	uint16_t linear_clu = raw_to_uint16(filt_clu,
-					ctx->calibration->offset[SETTING_INDEX_CLUTCH], 
-					ctx->calibration->scale[SETTING_INDEX_CLUTCH]);
+					current_calib.offset[SETTING_INDEX_CLUTCH], 
+					current_calib.scale[SETTING_INDEX_CLUTCH]);
 	uint16_t linear_brk = raw_to_uint16(filt_brk,
-					ctx->calibration->offset[SETTING_INDEX_BRAKE], 
-					ctx->calibration->scale[SETTING_INDEX_BRAKE]);
+					current_calib.offset[SETTING_INDEX_BRAKE], 
+					current_calib.scale[SETTING_INDEX_BRAKE]);
 	uint16_t linear_acc = raw_to_uint16(filt_acc,
-                    ctx->calibration->offset[SETTING_INDEX_ACCELERATOR], 
-                    ctx->calibration->scale[SETTING_INDEX_ACCELERATOR]);
+                    current_calib.offset[SETTING_INDEX_ACCELERATOR], 
+                    current_calib.scale[SETTING_INDEX_ACCELERATOR]);
 	// NickR: Curve transformation (if set)
 	uint16_t final_clu = curve_apply(SETTING_INDEX_CLUTCH, linear_clu);
 	uint16_t final_brk = curve_apply(SETTING_INDEX_BRAKE, linear_brk);
@@ -300,8 +300,6 @@ int app_adc_init(void)
 	k_work_queue_start(&app_adc_workq, app_adc_workq_stack_area,K_THREAD_STACK_SIZEOF(app_adc_workq_stack_area), APP_ADC_PRIORITY,NULL);
 
 	//get the pointer to calibration settings
-	ctx.calibration = get_calibration();
-	// NickR: Setup curve defaults
-	curve_init();
+	// ctx.calibration = get_calibration(); // We now get the calibration from global current_calib
 	return 0;
 }

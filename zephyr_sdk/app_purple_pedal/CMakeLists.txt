@@ -20,6 +20,7 @@ target_sources(app PRIVATE
     src/curve.c
     src/led.c
     src/main.c 
-    src/nvs_settings.c
+    # src/nvs_settings.c // Saving calibration is in preset.c
     src/usb.c
+    src/preset.c
 )

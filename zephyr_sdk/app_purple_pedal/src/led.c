@@ -14,7 +14,9 @@ static void gamepad_set_led_brightness(const struct device *dev, uint32_t led, i
 {
 	//uint8_t brightness = (pedal_value - GAMEPAD_REPORT_VALUE_MIN) * 100 / (GAMEPAD_REPORT_VALUE_MAX - GAMEPAD_REPORT_VALUE_MIN);
 	//TODO: need to implement internal calibration process to get these ranges.
-	int32_t br = (pedal_value - 4000) * 100 / 20000;
+	int channel_idx = led; 
+
+	int32_t br = 1 + (pedal_value * 99) / 65535;
 	uint8_t brightness = (br <0) ? 0 : ((br>100) ? 100 : (uint8_t)br);
 	//LOG_DBG("LED: %u, brightness: %u", led, brightness);
 	int err = led_set_brightness(dev, led, brightness);
@@ -28,9 +30,9 @@ static void gamepad_report_led_cb(const struct zbus_channel *chan)
 	const struct gamepad_report_out *rpt = zbus_chan_const_msg(chan);
 	//LOG_INF("gamepad report: accelerator = %d, brake = %d, clutch = %d",rpt->accelerator, rpt->brake, rpt->clutch);
 	//set LED PWM level according to gamepad report data
-	gamepad_set_led_brightness(led_pwm_pedal, 0, rpt->accelerator);
+	gamepad_set_led_brightness(led_pwm_pedal, 0, rpt->clutch);
 	gamepad_set_led_brightness(led_pwm_pedal, 1, rpt->brake);
-	gamepad_set_led_brightness(led_pwm_pedal, 2, rpt->clutch);
+	gamepad_set_led_brightness(led_pwm_pedal, 2, rpt->accelerator);
 }
 ZBUS_LISTENER_DEFINE(gp_rpt_led_handler, gamepad_report_led_cb);
 

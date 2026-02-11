@@ -15,6 +15,7 @@
 
 // NickR: Include curve headers
 #include "curve.h"
+#include "preset.h"
 
 LOG_MODULE_REGISTER(usb, CONFIG_APP_LOG_LEVEL);
 
@@ -24,13 +25,13 @@ LOG_MODULE_REGISTER(usb, CONFIG_APP_LOG_LEVEL);
 #define HID_USAGE_SIM_CTRL		0x02
 
 // Windows does NOT handle Clutch correctly
-// #define HID_GAMEPAD_REPORT_DESC() {				\
+/** #define HID_GAMEPAD_REPORT_DESC() {				\
 // 	HID_USAGE_PAGE(HID_USAGE_GEN_DESKTOP),		\
 // 	HID_USAGE(HID_USAGE_GEN_DESKTOP_JOYSTICK),	\
 // 	HID_COLLECTION(HID_COLLECTION_APPLICATION),	\
 // 		HID_USAGE_PAGE(HID_USAGE_SIM_CTRL),	\
 // 		HID_COLLECTION(HID_COLLECTION_PHYSICAL),      \
-// 			/* Axis Usage of Accelerator, Brake, Clutch */				\
+// 			 Axis Usage of Accelerator, Brake, Clutch 				\
 // 			HID_USAGE(0xC4), \
 // 			HID_USAGE(0xC5), \
 // 			HID_USAGE(0xC6), \
@@ -38,11 +39,11 @@ LOG_MODULE_REGISTER(usb, CONFIG_APP_LOG_LEVEL);
 // 			HID_LOGICAL_MAX16(0xff, 0x7f),	\
 // 			HID_REPORT_SIZE(16),	\
 // 			HID_REPORT_COUNT(3),	\
-// 			/*   Input (Data,Var,Abs)*/\
+// 			   Input (Data,Var,Abs) \
 // 			HID_INPUT(0x02),		\
 // 		HID_END_COLLECTION,			\
 // 	HID_END_COLLECTION,			\
-// }
+// }*/
 
 // see below links about clutch does not work for windows
 // https://www.overtake.gg/threads/anyone-muck-around-with-their-own-usb-hid-and-get-the-clutch-to-work.189256/
@@ -91,6 +92,23 @@ LOG_MODULE_REGISTER(usb, CONFIG_APP_LOG_LEVEL);
             HID_REPORT_SIZE(8), \
             HID_REPORT_COUNT(sizeof(struct gamepad_feature_rpt_curve)-1), \
             HID_FEATURE(0x02), \
+			/* --- SAVE PRESET REPORT (ID 11) --- */ \
+			HID_REPORT_ID(GAMEPAD_FEATURE_REPORT_SAVE_PRESET_ID), \
+			HID_USAGE(0x23),          /* Vendor Usage 0x23 */ \
+			HID_LOGICAL_MIN8(0x00), \
+			HID_LOGICAL_MAX8(0xFF),   /* Slot ID is 0-255 */ \
+			HID_REPORT_SIZE(8),       /* 1 Byte */ \
+			HID_REPORT_COUNT(1),      /* 1 Count (The Slot ID) */ \
+			HID_FEATURE(0x02),        /* Data, Var, Abs */ \
+			\
+			/* --- LOAD PRESET REPORT (ID 12) --- */ \
+			HID_REPORT_ID(GAMEPAD_FEATURE_REPORT_LOAD_PRESET_ID), \
+			HID_USAGE(0x24),          /* Vendor Usage 0x24 */ \
+			HID_LOGICAL_MIN8(0x00), \
+			HID_LOGICAL_MAX8(0xFF), \
+			HID_REPORT_SIZE(8), \
+			HID_REPORT_COUNT(1), \
+			HID_FEATURE(0x02), \
             /* --- NEW CODE END --- */ \
 	HID_END_COLLECTION,			\
 }
@@ -175,7 +193,8 @@ static int gamepad_get_report(const struct device *dev,const uint8_t type, const
 		}
 		struct gamepad_feature_rpt_calib *rpt = (struct gamepad_feature_rpt_calib*)buf;
 		rpt->report_id = GAMEPAD_FEATURE_REPORT_CALIB_ID;
-		rpt->calib = *get_calibration();
+		// Copy from global RAM
+		memcpy(&rpt->calib, &current_calib, sizeof(current_calib));
 		return sizeof(struct gamepad_feature_rpt_calib);
 	}
 	
@@ -190,7 +209,7 @@ static int gamepad_set_report(const struct device *dev, const uint8_t type, cons
 	// NickR: --- NEW CODE: Handle Curve Data (Report 10) ---
     // We handle this FIRST. If it matches, we process and return early.
     // This preserves the logic of your original code below for Report 3.
-if (type == HID_REPORT_TYPE_FEATURE && id == GAMEPAD_FEATURE_REPORT_CURVE_ID) {
+	if (type == HID_REPORT_TYPE_FEATURE && id == GAMEPAD_FEATURE_REPORT_CURVE_ID) {
         if (len != sizeof(struct gamepad_feature_rpt_curve)) {
              LOG_ERR("len %d != sizeof(struct gamepad_feature_rpt_curve) %d", 
                      len, sizeof(struct gamepad_feature_rpt_curve));
@@ -201,7 +220,7 @@ if (type == HID_REPORT_TYPE_FEATURE && id == GAMEPAD_FEATURE_REPORT_CURVE_ID) {
 
         // Create a local, aligned array to hold the points. 
         // 28 is the maximum points per chunk defined in the struct.
-        uint16_t aligned_points[28];
+        uint16_t aligned_points[POINTS_PER_CHUNK];
 
         // Use memcpy to safely move data from the potentially unaligned 
         // packed struct to the aligned stack array.
@@ -209,19 +228,55 @@ if (type == HID_REPORT_TYPE_FEATURE && id == GAMEPAD_FEATURE_REPORT_CURVE_ID) {
         if (points_size <= sizeof(aligned_points)) {
             memcpy(aligned_points, msg->points, points_size);
             
-            // Update the RAM using the safe, aligned pointer
-            curve_update_data(msg->channel_index, 
-                              msg->chunk_index * 28, 
-                              msg->point_count, 
-                              aligned_points);
+			// Also update our "Working Memory" struct so we can save it later
+            // (Assuming current_curves is globally accessible via common.h)
+            memcpy(&current_curves.points[msg->channel_index][msg->chunk_index * POINTS_PER_CHUNK], 
+                   aligned_points, 
+                   points_size);
+
+			// We only save to flash when the PC sends the final piece of data.
+			// Chunk 0 (0-28), Chunk 1 (28-56), Chunk 2 (56-65).
+			if (msg->chunk_index == LAST_CHUNK_INDEX) {
+				storage_save_active(&current_calib, &current_curves); // <--- Write to persistent storage
+			}
         }
-        
-        // TOGGLE: User sent a curve, so we ENABLE curve mode
-        curve_set_active(true); 
         
         return 0; // Done, skip the rest
     }
     // -----------------------------------------------
+	// --- SAVE PRESET (ID 11) ---
+    if (type == HID_REPORT_TYPE_FEATURE && id == GAMEPAD_FEATURE_REPORT_SAVE_PRESET_ID) {
+        if (len != sizeof(struct gamepad_feature_rpt_preset_action)) {
+             LOG_ERR("Save Preset Size Mismatch"); 
+             return 0;
+        }
+        
+        struct gamepad_feature_rpt_preset_action *cmd = (struct gamepad_feature_rpt_preset_action *)buf;
+        
+        LOG_INF("CMD: Save Preset to Slot %d", cmd->slot_id);
+        
+        // Save current RAM to the specified Slot in Flash
+        storage_save_preset(cmd->slot_id, &current_calib, &current_curves);
+        
+        return 0;
+    }
+
+    // --- LOAD PRESET (ID 12) ---
+    if (type == HID_REPORT_TYPE_FEATURE && id == GAMEPAD_FEATURE_REPORT_LOAD_PRESET_ID) {
+        if (len != sizeof(struct gamepad_feature_rpt_preset_action)) {
+             LOG_ERR("Load Preset Size Mismatch"); 
+             return 0;
+        }
+        
+        struct gamepad_feature_rpt_preset_action *cmd = (struct gamepad_feature_rpt_preset_action *)buf;
+        
+        LOG_INF("CMD: Load Preset from Slot %d", cmd->slot_id);
+
+        // Load from Flash into Global RAM
+        storage_load_preset(cmd->slot_id, &current_calib, &current_curves);
+        
+        return 0;
+    }
 
 	if(type != HID_REPORT_TYPE_FEATURE || id != GAMEPAD_FEATURE_REPORT_CALIB_ID){
 		LOG_WRN("Get Report not implemented, Type %u ID %u", type, id);
@@ -234,19 +289,13 @@ if (type == HID_REPORT_TYPE_FEATURE && id == GAMEPAD_FEATURE_REPORT_CURVE_ID) {
 		return 0;
 	}
 	struct gamepad_feature_rpt_calib *rpt = (struct gamepad_feature_rpt_calib *)buf;
-	int err = set_calibration(&rpt->calib);
-	if(err){
-		LOG_ERR("set_calibration() returns %d", err);
-	}
 
-	// NickR: --- NEW CODE: Disable Curve ---
-    // TOGGLE: User sent a standard Linear Calibration.
-    // We DISABLE the curve so the offset/scale works purely linearly again.
-    else {
-        curve_set_active(false);
-    }
-    // ------------------------------------
+	// Copy the new calibration values from USB packet to Global RAM
+	memcpy(&current_calib, &rpt->calib, sizeof(current_calib));
 
+	// Save immediately to Flash ("active/" key)
+	storage_save_active(&current_calib, &current_curves);
+	
 	return 0;
 }
 

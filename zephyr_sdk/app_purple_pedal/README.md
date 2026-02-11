@@ -285,17 +285,19 @@ and write it into the PurplePedal non-volatile memory.
 
 The PurplePedal side only provides the methods to read the raw loadcell readings and to write the calibration coefficients. The user interaction and coefficient calculation shall be implemented in PC software.
 
-The PurplePedal provides 3 report IDs in total, 
+The PurplePedal provides 4 report IDs in total, 
 
 - report ID 0x01 is normal HID input report. 
 - report ID 0x02 is the feature report to read the raw loadcell
 - report ID 0x03 is the feature report to write the calibration setting.
+- report ID 0x04 is the feature report of device unique ID
 
 C code snippet is show as below:
 ```c
 #define GAMEPAD_INPUT_REPORT_ID (0x01)
 #define GAMEPAD_FEATURE_REPORT_RAW_VAL_ID (0x02)
 #define GAMEPAD_FEATURE_REPORT_CALIB_ID (0x03)
+#define GAMEPAD_FEATURE_REPORT_UID_ID (0x04)
 ```
 
 These feature reports can be read/written with Windows API. Here we show the manual process to perform the calibration by using HIDApiTest tool. This tool can be used for windows to debug and send / receive HID feature report, below is the download link:
@@ -310,8 +312,8 @@ This is a command-line tool, use Windows shell to run it.
 Use hidapitester command to read the feature report 0x02 with raw ADC readings:
 
 ```sh
-.\hidapitester.exe --vidpid 2FE3/0005 --usagePage 0x1 --usage 0x04 --open --length 10 --read-feature 2
-Opening device, vid/pid:0x2FE3/0x0005, usagePage/usage: 1/4
+.\hidapitester.exe --vidpid 0483/A575 --usagePage 0x1 --usage 0x04 --open --length 10 --read-feature 2
+Opening device, vid/pid:0x0483/A575, usagePage/usage: 1/4
 Device opened
 Reading 10-byte feature report, report_id 2...read 10 bytes:
  02 83 03 7E B2 26 00 C2 26 00
@@ -346,8 +348,8 @@ $$Scale=(Avg_{pressed} - Avg_{unpressed})*margin%$$
 
 The original calibration number can be read by below command:
 ```sh
-.\hidapitester.exe --vidpid 2FE3/0005 --usagePage 0x1 --usage 0x04 --open --length 25 --read-feature 3
-Opening device, vid/pid:0x2FE3/0x0005, usagePage/usage: 1/4
+.\hidapitester.exe --vidpid 0483/A575 --usagePage 0x1 --usage 0x04 --open --length 25 --read-feature 3
+Opening device, vid/pid:0x0483/A575, usagePage/usage: 1/4
 Device opened
 Reading 25-byte feature report, report_id 3...read 25 bytes:
  03 00 00 80 00 00 00 80 00 00 00 80 00 4D 62 10 00 4D 62 10 00 4D 62 10 00
@@ -394,7 +396,7 @@ Note that these values are calculated using the testing loadcell and can be upda
 
 ```sh
 .\hidapitester.exe --vidpid 2FE3/0005 --usagePage 0x1 --usage 0x04 --open --read-feature 3
-Opening device, vid/pid:0x2FE3/0x0005, usagePage/usage: 1/4
+Opening device, vid/pid:0x0483/A575, usagePage/usage: 1/4
 Device opened
 Reading 64-byte feature report, report_id 3...read 25 bytes:
  03 00 00 80 00 00 00 80 00 00 00 80 00 4D 62 10 00 4D 62 10 00 4D 62 10 00 00 00 00 00 00 00 00
@@ -403,6 +405,33 @@ Closing device
 ```
 
 # 4. How to read STM32 unique ID using DFU
+
+Feature report ID 0x04 is defined for STM32 unique ID.
+
+```c
+#define GAMEPAD_INPUT_REPORT_ID (0x01)
+#define GAMEPAD_FEATURE_REPORT_RAW_VAL_ID (0x02)
+#define GAMEPAD_FEATURE_REPORT_CALIB_ID (0x03)
+#define GAMEPAD_FEATURE_REPORT_UID_ID (0x04)
+```
+this feature report can be read by using HIDApiTest, see previous section for where to find and download it.
+
+Below command shows how to read the STM32 unique ID and the output of the command.
+
+```sh
+.\hidapitester.exe --vidpid 0483/a575 --usagePage 0x1 --usage 0x04 --open --length 13 --read-feature 4
+Opening device, vid/pid:0x0483/0xA575, usagePage/usage: 1/4
+Device opened
+Reading 13-byte feature report, report_id 4...read 13 bytes:
+ 04 20 39 39 51 54 42 50 0E 00 52 00 33
+Closing device
+```
+
+Note that the result is 13-byte, the first byte is report ID, 
+followed by 3x 32bit unique ID information.
+
+To verify the result, also read the STM32 UID by JLink or dfu-util:
+
 ```
 JLinkExe
 outputs below information

@@ -37,6 +37,8 @@ extern "C" {
 #define GAMEPAD_INPUT_REPORT_ID (0x01)
 #define GAMEPAD_FEATURE_REPORT_RAW_VAL_ID (0x02)
 #define GAMEPAD_FEATURE_REPORT_CALIB_ID (0x03)
+#define GAMEPAD_FEATURE_REPORT_UID_ID (0x04)
+#define GAMEPAD_FEATURE_REPORT_UID_LENGTH (12) //12bytes UID length for STM32
 
 enum app_state{
 	APP_STATE_IDLE=0,
@@ -75,6 +77,11 @@ struct gamepad_feature_rpt_raw_val{
 struct gamepad_feature_rpt_calib{
 	uint8_t report_id;
 	struct gamepad_calibration calib;
+}__packed;
+
+struct gamepad_feature_rpt_uid{
+	uint8_t report_id;
+	uint8_t uid[GAMEPAD_FEATURE_REPORT_UID_LENGTH];
 }__packed;
 
 // struct __packed app_version{

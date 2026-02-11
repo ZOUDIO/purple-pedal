@@ -65,7 +65,7 @@ Note that this Zadig WinUSB driver install needs to be done twice, the device sh
 
 run from windows terminal:
 ```
-.\dfu-util.exe -d 2fe3:0005 --alt 0 --download zephyr.signed.bin
+.\dfu-util.exe -d 0483:a575 --alt 0 --download zephyr.signed.bin
 ```
 
 To prevent DFU failure, it is recommended to turn off the program that is using the HID so that the USB bus is not busy and transmission is less likely to go wrong.
@@ -242,9 +242,9 @@ run from windows terminal:
 ```
 cd C:\Users\<your_user_name>\Downloads\dfu-util-0.11-binaries\dfu-util-0.11-binaries\win64>
 
-.\dfu-util.exe -d 2fe3:0005 --alt 0 --download app_ver02.signed.bin
+.\dfu-util.exe -d 0483:a575 --alt 0 --download app_ver02.signed.bin
 
-.\dfu-util.exe -d 2fe3:0005 --alt 0 --download app_ver02.signed.bin -t64
+.\dfu-util.exe -d 0483:a575 --alt 0 --download app_ver02.signed.bin -t64
 
 .\dfu-util.exe -d 0483:a575 --alt 0 --download app_ver02.signed.bin -t64
 ```
@@ -272,7 +272,7 @@ Then it shows App Version: 0.2
 Firmware version can also be downgraded, using below command to program app_ver01.signed.bin:
 
 ```
-.\dfu-util.exe -d 2fe3:0005 --alt 0 --download app_ver01.signed.bin
+.\dfu-util.exe -d 0483:a575 --alt 0 --download app_ver01.signed.bin
 ```
 
 # 3. How to perform calibration to the pedal

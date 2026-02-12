@@ -51,6 +51,9 @@ struct usb_state_machine{
 K_MSGQ_DEFINE(usb_sm_msgq, sizeof(struct usb_event), 10, 1); 
 static struct usb_state_machine usb_sm = {.usb_msgq = &usb_sm_msgq, .sm_states = usb_sm_states};
 
+// Memory flag for disconnect
+volatile uint8_t pedal_connected_flags = 0x07;
+
 static void idle_entry(void *o)
 {
 	//gamepad_set_status_led(APP_STATE_IDLE);

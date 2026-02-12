@@ -26,7 +26,11 @@ extern "C" {
 #define LOAD_CELL_MV_V (1)
 #define LOAD_CELL_DEFAULT_SCALE ((uint64_t)ADC_VAL_MID * ADC_GAIN * LOAD_CELL_MV_V / 1000ULL)
 #define LOAD_CELL_DEFAULT_OFFSET (ADC_VAL_MID)
-#define LOAD_CELL_DISCONNECT_THRESHOLD (ADC_VAL_MAX * 99 / 100)
+#define LOAD_CELL_DISCONNECT_THRESHOLD (ADC_VAL_MAX * 5 / 100)
+
+// Global flag to share connection status between ADC and LED
+// Bit 0 = Clutch, Bit 1 = Brake, Bit 2 = Accelerator
+extern volatile uint8_t pedal_connected_flags;
 
 // NickR: --- EMA FILTER VARIABLES ---
 // Strength: 0 (No filter) to 255 (Max lag). 

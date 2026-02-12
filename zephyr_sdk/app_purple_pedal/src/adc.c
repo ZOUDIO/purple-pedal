@@ -127,8 +127,8 @@ static struct app_adc_ctx ctx = {
 
 inline uint16_t raw_to_uint16(int32_t raw, int32_t offset, int32_t scale)
 {
-	//clamp the <offset values. also when loadcell is disconnect, we should output 0
-	if(raw < offset || raw >= LOAD_CELL_DISCONNECT_THRESHOLD) return 0;
+	//clamp the <offset values. also when loadcell is disconnected, we should output 0
+	if(raw < offset || raw <= LOAD_CELL_DISCONNECT_THRESHOLD) return 0;
 
 	int64_t val_64 = ((int64_t)(raw - offset)) * UINT16_MAX / scale;
 	return (val_64 > UINT16_MAX)? UINT16_MAX : (uint16_t)val_64;
@@ -149,6 +149,18 @@ static void app_adc_work_handler(struct k_work *work)
 	int32_t raw_clu = ctx->channel_reading[0][SETTING_INDEX_CLUTCH];
     int32_t raw_brk = ctx->channel_reading[0][SETTING_INDEX_BRAKE];
     int32_t raw_acc = ctx->channel_reading[0][SETTING_INDEX_ACCELERATOR];
+
+	// UPDATE CONNECTION FLAGS (Critical for LED Logic)
+    // Logic: If Raw Value is small, it's disconnected.
+    // We update the global 'pedal_connected_flags' bits:
+    // Bit 0 = Clutch, Bit 1 = Brake, Bit 2 = Accelerator
+    uint8_t flags = 0;
+
+    if (raw_clu > LOAD_CELL_DISCONNECT_THRESHOLD) flags |= (1 << SETTING_INDEX_CLUTCH);
+    if (raw_brk > LOAD_CELL_DISCONNECT_THRESHOLD) flags |= (1 << SETTING_INDEX_BRAKE);
+    if (raw_acc > LOAD_CELL_DISCONNECT_THRESHOLD) flags |= (1 << SETTING_INDEX_ACCELERATOR);
+
+    pedal_connected_flags = flags; // Write to Global
 
     // NickR: Apply EMA Filter
     int32_t filt_clu = apply_ema_filter(SETTING_INDEX_CLUTCH, raw_clu);

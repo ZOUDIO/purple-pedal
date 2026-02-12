@@ -15,3 +15,15 @@ project(app_purple_pedal)
 # include(${ZEPHYR_BASE}/samples/subsys/usb/common/common.cmake)
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
+#include(${ZEPHYR_BASE}/samples/subsys/usb/common/common.cmake)
+# FILE(GLOB app_sources src/*.c)
+# target_sources(app PRIVATE ${app_sources})
+#target_sources(app PRIVATE 
+#    src/adc.c
+#    src/curve.c
+#    src/led.c
+#    src/main.c 
+#    # src/nvs_settings.c // Saving calibration is in preset.c
+#    src/usb.c
+#    src/preset.c
+#)

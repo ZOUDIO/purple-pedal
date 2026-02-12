@@ -26,6 +26,7 @@ extern "C" {
 #define LOAD_CELL_MV_V (1)
 #define LOAD_CELL_DEFAULT_SCALE ((uint64_t)ADC_VAL_MID * ADC_GAIN * LOAD_CELL_MV_V / 1000ULL)
 #define LOAD_CELL_DEFAULT_OFFSET (ADC_VAL_MID)
+#define LOAD_CELL_DISCONNECT_THRESHOLD (ADC_VAL_MAX * 99 / 100)
 
 // NickR: --- EMA FILTER VARIABLES ---
 // Strength: 0 (No filter) to 255 (Max lag). 
@@ -48,6 +49,8 @@ extern "C" {
 #define GAMEPAD_INPUT_REPORT_ID (0x01)
 #define GAMEPAD_FEATURE_REPORT_RAW_VAL_ID (0x02)
 #define GAMEPAD_FEATURE_REPORT_CALIB_ID (0x03)
+#define GAMEPAD_FEATURE_REPORT_UID_ID (0x04)
+#define GAMEPAD_FEATURE_REPORT_UID_LENGTH (12) //12bytes UID length for STM32
 // NickR: Set feature report 10 for curve calibration
 #define GAMEPAD_FEATURE_REPORT_CURVE_ID  (0x0A)
 // Preset Command IDs ---
@@ -107,6 +110,11 @@ struct gamepad_feature_rpt_raw_val{
 struct gamepad_feature_rpt_calib{
 	uint8_t report_id;
 	struct_calibration_t calib;
+}__packed;
+
+struct gamepad_feature_rpt_uid{
+	uint8_t report_id;
+	uint8_t uid[GAMEPAD_FEATURE_REPORT_UID_LENGTH];
 }__packed;
 
 // NickR: Curve calibration packet structure

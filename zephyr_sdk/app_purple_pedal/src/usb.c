@@ -1,5 +1,3 @@
-#include <sample_usbd.h>
-
 #include <zephyr/kernel.h>
 #include <zephyr/usb/usbd.h>
 #include <zephyr/usb/class/usbd_hid.h>
@@ -8,8 +6,10 @@
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/zbus/zbus.h>
 #include <zephyr/sys/reboot.h>
+#include <zephyr/drivers/hwinfo.h>
 
 #include "common.h"
+#include "sample_usbd.h"
 
 #include <zephyr/logging/log.h>
 
@@ -84,6 +84,13 @@ LOG_MODULE_REGISTER(usb, CONFIG_APP_LOG_LEVEL);
 			HID_REPORT_SIZE(8),	\
 			HID_REPORT_COUNT(sizeof(struct gamepad_feature_rpt_calib)-1), \
 			HID_FEATURE(0x02), \
+			HID_REPORT_ID(GAMEPAD_FEATURE_REPORT_UID_ID), \
+			HID_USAGE(0x23), \
+			HID_LOGICAL_MIN8(0x00),	\
+			HID_LOGICAL_MAX16(0xff, 0x00),	\
+			HID_REPORT_SIZE(8),	\
+			HID_REPORT_COUNT(sizeof(struct gamepad_feature_rpt_uid)-1), \
+			HID_FEATURE(0x02), \
 			/* NickR: Adding curve --- NEW CODE START --- */ \
             HID_REPORT_ID(GAMEPAD_FEATURE_REPORT_CURVE_ID), \
             HID_USAGE(0x22), \
@@ -122,7 +129,7 @@ static const struct device *hid_dev = DEVICE_DT_GET(HID_DEVICE_ID);
 static const uint8_t hid_report_desc[] = HID_GAMEPAD_REPORT_DESC();
 
 //USBD_DEVICE_DEFINE(dfu_usbd, DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)), 0x2fe3, 0xffff);
-USBD_DEVICE_DEFINE(dfu_usbd, DEVICE_DT_GET(USB_DEVICE_CONTROLLER_ID), 0x2fe3, 0xffff);
+USBD_DEVICE_DEFINE(dfu_usbd, DEVICE_DT_GET(USB_DEVICE_CONTROLLER_ID), CONFIG_SAMPLE_USBD_VID, CONFIG_SAMPLE_USBD_DFU_PID);
 USBD_DESC_LANG_DEFINE(sample_lang);
 USBD_DESC_CONFIG_DEFINE(fs_cfg_desc, "DFU FS Configuration");
 USBD_DESC_CONFIG_DEFINE(hs_cfg_desc, "DFU HS Configuration");
@@ -198,6 +205,21 @@ static int gamepad_get_report(const struct device *dev,const uint8_t type, const
 		return sizeof(struct gamepad_feature_rpt_calib);
 	}
 	
+	if(id == GAMEPAD_FEATURE_REPORT_UID_ID){
+		if(len < sizeof(struct gamepad_feature_rpt_uid)){
+			LOG_ERR("len %d <  sizeof(struct gamepad_feature_rpt_uid) %d", 
+				len, sizeof(struct gamepad_feature_rpt_calib));
+			return 0;
+		}
+		struct gamepad_feature_rpt_uid *rpt = (struct gamepad_feature_rpt_uid*)buf;
+		rpt->report_id = GAMEPAD_FEATURE_REPORT_UID_ID;
+		ssize_t sz = hwinfo_get_device_id(rpt->uid, GAMEPAD_FEATURE_REPORT_UID_LENGTH);
+		if(sz != GAMEPAD_FEATURE_REPORT_UID_LENGTH){
+			LOG_ERR("hwinfo_get_device_id() returns %d, expected %d bytes", sz, GAMEPAD_FEATURE_REPORT_UID_LENGTH);
+			return sz+1;
+		}
+		return sizeof(struct gamepad_feature_rpt_uid);;
+	}
 	LOG_WRN("Get Report not implemented, Type %u ID %u", type, id);
 	return 0;
 	

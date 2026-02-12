@@ -127,7 +127,9 @@ static struct app_adc_ctx ctx = {
 
 inline uint16_t raw_to_uint16(int32_t raw, int32_t offset, int32_t scale)
 {
-	if(raw < offset) return 0;
+	//clamp the <offset values. also when loadcell is disconnect, we should output 0
+	if(raw < offset || raw >= LOAD_CELL_DISCONNECT_THRESHOLD) return 0;
+
 	int64_t val_64 = ((int64_t)(raw - offset)) * UINT16_MAX / scale;
 	return (val_64 > UINT16_MAX)? UINT16_MAX : (uint16_t)val_64;
 }

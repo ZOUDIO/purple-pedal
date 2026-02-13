@@ -65,6 +65,7 @@ LOG_MODULE_REGISTER(usb, CONFIG_APP_LOG_LEVEL);
 			HID_INPUT(0x02),		\
 			/* feature report*/ \
 			HID_USAGE_PAGE_2BYTE(0x00, 0xff), \
+			/* raw ADC values*/ \
 			HID_REPORT_ID(GAMEPAD_FEATURE_REPORT_RAW_VAL_ID), \
 			HID_USAGE(0x20), \
 			HID_LOGICAL_MIN8(0x00),	\
@@ -72,6 +73,7 @@ LOG_MODULE_REGISTER(usb, CONFIG_APP_LOG_LEVEL);
 			HID_REPORT_SIZE(8),	\
 			HID_REPORT_COUNT(sizeof(struct gamepad_feature_rpt_raw_val)-1), \
 			HID_FEATURE(0x02), \
+			/* calibration values*/ \
 			HID_REPORT_ID(GAMEPAD_FEATURE_REPORT_CALIB_ID), \
 			HID_USAGE(0x21), \
 			HID_LOGICAL_MIN8(0x00),	\
@@ -79,12 +81,61 @@ LOG_MODULE_REGISTER(usb, CONFIG_APP_LOG_LEVEL);
 			HID_REPORT_SIZE(8),	\
 			HID_REPORT_COUNT(sizeof(struct gamepad_feature_rpt_calib)-1), \
 			HID_FEATURE(0x02), \
+			/* unique ID*/ \
 			HID_REPORT_ID(GAMEPAD_FEATURE_REPORT_UID_ID), \
 			HID_USAGE(0x23), \
 			HID_LOGICAL_MIN8(0x00),	\
 			HID_LOGICAL_MAX16(0xff, 0x00),	\
 			HID_REPORT_SIZE(8),	\
 			HID_REPORT_COUNT(sizeof(struct gamepad_feature_rpt_uid)-1), \
+			HID_FEATURE(0x02), \
+			/* active curve*/ \
+			HID_REPORT_ID(GAMEPAD_FEATURE_REPORT_ACTIVE_CURVE_ID), \
+			HID_USAGE(0x24), \
+			HID_LOGICAL_MIN8(0x00),	\
+			HID_LOGICAL_MAX16(0xff, 0x00),	\
+			HID_REPORT_SIZE(8),	\
+			HID_REPORT_COUNT(sizeof(struct gamepad_feature_rpt_active_curve)-1), \
+			HID_FEATURE(0x02), \
+			/* curve slot 1*/ \
+			HID_REPORT_ID(GAMEPAD_FEATURE_REPORT_CURVE_SLOT1_ID), \
+			HID_USAGE(0x24), \
+			HID_LOGICAL_MIN8(0x00),	\
+			HID_LOGICAL_MAX16(0xff, 0x00),	\
+			HID_REPORT_SIZE(8),	\
+			HID_REPORT_COUNT(sizeof(struct gamepad_feature_rpt_curve)-1), \
+			HID_FEATURE(0x02), \
+			/* curve slot 2*/ \
+			HID_REPORT_ID(GAMEPAD_FEATURE_REPORT_CURVE_SLOT2_ID), \
+			HID_USAGE(0x24), \
+			HID_LOGICAL_MIN8(0x00),	\
+			HID_LOGICAL_MAX16(0xff, 0x00),	\
+			HID_REPORT_SIZE(8),	\
+			HID_REPORT_COUNT(sizeof(struct gamepad_feature_rpt_curve)-1), \
+			HID_FEATURE(0x02), \
+			/* curve slot 3*/ \
+			HID_REPORT_ID(GAMEPAD_FEATURE_REPORT_CURVE_SLOT3_ID), \
+			HID_USAGE(0x24), \
+			HID_LOGICAL_MIN8(0x00),	\
+			HID_LOGICAL_MAX16(0xff, 0x00),	\
+			HID_REPORT_SIZE(8),	\
+			HID_REPORT_COUNT(sizeof(struct gamepad_feature_rpt_curve)-1), \
+			HID_FEATURE(0x02), \
+			/* curve slot 4*/ \
+			HID_REPORT_ID(GAMEPAD_FEATURE_REPORT_CURVE_SLOT4_ID), \
+			HID_USAGE(0x24), \
+			HID_LOGICAL_MIN8(0x00),	\
+			HID_LOGICAL_MAX16(0xff, 0x00),	\
+			HID_REPORT_SIZE(8),	\
+			HID_REPORT_COUNT(sizeof(struct gamepad_feature_rpt_curve)-1), \
+			HID_FEATURE(0x02), \
+			/* curve slot 5*/ \
+			HID_REPORT_ID(GAMEPAD_FEATURE_REPORT_CURVE_SLOT5_ID), \
+			HID_USAGE(0x24), \
+			HID_LOGICAL_MIN8(0x00),	\
+			HID_LOGICAL_MAX16(0xff, 0x00),	\
+			HID_REPORT_SIZE(8),	\
+			HID_REPORT_COUNT(sizeof(struct gamepad_feature_rpt_curve)-1), \
 			HID_FEATURE(0x02), \
 	HID_END_COLLECTION,			\
 }
@@ -176,7 +227,7 @@ static int gamepad_get_report(const struct device *dev,const uint8_t type, const
 	if(id == GAMEPAD_FEATURE_REPORT_UID_ID){
 		if(len < sizeof(struct gamepad_feature_rpt_uid)){
 			LOG_ERR("len %d <  sizeof(struct gamepad_feature_rpt_uid) %d", 
-				len, sizeof(struct gamepad_feature_rpt_calib));
+				len, sizeof(struct gamepad_feature_rpt_uid));
 			return 0;
 		}
 		struct gamepad_feature_rpt_uid *rpt = (struct gamepad_feature_rpt_uid*)buf;
@@ -186,7 +237,30 @@ static int gamepad_get_report(const struct device *dev,const uint8_t type, const
 			LOG_ERR("hwinfo_get_device_id() returns %d, expected %d bytes", sz, GAMEPAD_FEATURE_REPORT_UID_LENGTH);
 			return sz+1;
 		}
-		return sizeof(struct gamepad_feature_rpt_uid);;
+		return sizeof(struct gamepad_feature_rpt_uid);
+	}
+
+	if(id == GAMEPAD_FEATURE_REPORT_ACTIVE_CURVE_ID){
+		if(len < sizeof(struct gamepad_feature_rpt_active_curve)){
+			LOG_ERR("len %d <  sizeof(struct gamepad_feature_rpt_active_curve) %d", 
+				len, sizeof(struct gamepad_feature_rpt_active_curve));
+			return 0;
+		}
+		struct gamepad_feature_rpt_active_curve *rpt = (struct gamepad_feature_rpt_active_curve*)buf;
+		rpt->active_curve_slot = 123;
+		return sizeof(struct gamepad_feature_rpt_active_curve);
+	}
+
+	if(id >= GAMEPAD_FEATURE_REPORT_CURVE_SLOT1_ID && id <= GAMEPAD_FEATURE_REPORT_CURVE_SLOT5_ID){
+		if(len < sizeof(struct gamepad_feature_rpt_curve)){
+			LOG_ERR("len %d <  sizeof(struct gamepad_feature_rpt_curve) %d", 
+				len, sizeof(struct gamepad_feature_rpt_curve));
+			return 0;
+		}
+		struct gamepad_feature_rpt_curve *rpt = (struct gamepad_feature_rpt_curve*)buf;
+		rpt->report_id = id;
+		rpt->curve = *get_curve_slot(id);
+		return sizeof(struct gamepad_feature_rpt_curve);
 	}
 	LOG_WRN("Get Report not implemented, Type %u ID %u", type, id);
 	return 0;
@@ -197,7 +271,7 @@ static int gamepad_get_report(const struct device *dev,const uint8_t type, const
 static int gamepad_set_report(const struct device *dev, const uint8_t type, const uint8_t id, const uint16_t len, const uint8_t *const buf)
 {
 	if(type != HID_REPORT_TYPE_FEATURE || id != GAMEPAD_FEATURE_REPORT_CALIB_ID){
-		LOG_WRN("Get Report not implemented, Type %u ID %u", type, id);
+		LOG_WRN("Set Report not implemented, Type %u ID %u", type, id);
 		return 0;
 	}
 

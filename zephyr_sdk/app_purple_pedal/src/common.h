@@ -77,7 +77,7 @@ struct gamepad_curve{
     uint16_t accelerator[GAMEPAD_FEATURE_REPORT_CURVE_NUM_POINTS]; 
 	uint16_t brake[GAMEPAD_FEATURE_REPORT_CURVE_NUM_POINTS]; 
 	uint16_t clutch[GAMEPAD_FEATURE_REPORT_CURVE_NUM_POINTS]; 
-}__packed;
+}__packed __aligned(2);
 
 struct gamepad_report_out{
 	uint8_t report_id;
@@ -110,12 +110,13 @@ struct gamepad_feature_rpt_active_curve {
 
 struct gamepad_feature_rpt_curve {
 	uint8_t report_id;
+	uint8_t : 8;
 	struct gamepad_curve curve;
-} __packed;
+} __packed __aligned(2);
 
 struct gamepad_curve_context{
-	uint8_t active_curve_slot;
 	struct gamepad_curve curve_slot[GAMEPAD_TOTAL_CURVE_SLOT_NUM];
+	uint8_t active_curve_slot;
 };
 
 enum usb_event_type{
@@ -142,6 +143,7 @@ int app_setting_init(void);
 const struct gamepad_calibration *get_calibration(void);
 int set_calibration(const struct gamepad_calibration *calib);
 const struct gamepad_curve* get_curve_slot(uint8_t slot_id);
+const struct gamepad_curve* get_active_curve_slot(void);
 //void gamepad_set_status_led(const enum app_state state);
 void post_usb_event(struct usb_event event);
 

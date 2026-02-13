@@ -493,6 +493,10 @@ Using STM32 ROM DFU we can read this:
 
 CONFIG_UDC_BUF_POOL_SIZE controls the maximum 
 
+```sh
+.\hidapitester.exe --vidpid 0483/A575 --usagePage 0x1 --usage 0x04 --open --length 194 --read-feature 21
+```
+
 # 5. reference documents
 
 HID specification:

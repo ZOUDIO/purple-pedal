@@ -117,13 +117,13 @@ int set_curve_slot(uint8_t slot_id, const struct gamepad_curve *curve)
 const struct gamepad_curve* get_curve_slot(uint8_t slot_id)
 {	
 	uint8_t slot = slot_id - GAMEPAD_FEATURE_REPORT_CURVE_SLOT_ID_BASE;
-	if(slot == 0 || slot > GAMEPAD_FEATURE_REPORT_CURVE_SLOT_NUM){
+	if(slot > GAMEPAD_FEATURE_REPORT_CURVE_SLOT_NUM){
 		return NULL;
 	}
 	return &gp_curve_ctx.curve_slot[slot];
 }
 
-const struct gamepad_curve_context *get_curve_context(void)
+const struct gamepad_curve* get_active_curve_slot(void)
 {
-	return &gp_curve_ctx;
+	return get_curve_slot(gp_curve_ctx.active_curve_slot + GAMEPAD_FEATURE_REPORT_CURVE_SLOT_ID_BASE);
 }

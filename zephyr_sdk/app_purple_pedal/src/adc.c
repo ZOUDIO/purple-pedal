@@ -107,7 +107,7 @@ static struct app_adc_ctx ctx = {
 // 	LOG_DBG("app_adc_work_handler() ended");
 // }
 
-inline uint16_t raw_to_uint16(int32_t raw, int32_t offset, int32_t scale)
+static inline uint16_t raw_to_uint16(int32_t raw, int32_t offset, int32_t scale)
 {
 	//clamp the <offset values. also when loadcell is disconnect, we should output 0
 	if(raw < offset || raw >= LOAD_CELL_DISCONNECT_THRESHOLD) return 0;
@@ -116,6 +116,25 @@ inline uint16_t raw_to_uint16(int32_t raw, int32_t offset, int32_t scale)
 	return (val_64 > UINT16_MAX)? UINT16_MAX : (uint16_t)val_64;
 }
 
+static uint16_t curve_calculate(uint16_t in, const uint16_t *curve_points, size_t num_points)
+{	//assume curve_points is sorted in ascending order, and in is also in ascending order
+	//find the segment that in is in, then do linear interpolation
+
+	size_t idx = in * (num_points-1) / (UINT16_MAX);
+	//now in is between curve_points[idx] and curve_points[idx+1]
+
+	size_t in0 = idx * (UINT16_MAX) / (num_points-1);
+	//size_t in1 = (idx+1) * (UINT16_MAX) / (num_points-1);
+
+    uint32_t x = in - in0;
+    uint32_t y0 = curve_points[idx];
+    uint32_t y1 = curve_points[idx + 1];
+
+    uint32_t out = y0 + x * (y1 - y0) * (num_points - 1) / UINT16_MAX;
+
+    return (uint16_t)out;
+
+}
 
 static void app_adc_work_handler(struct k_work *work)
 {
@@ -160,19 +179,43 @@ static void app_adc_work_handler(struct k_work *work)
 	// LOG_INF("rpt_raw_val.acc_raw = 0x%x, .brake_raw = 0x%x, .clutch_raw = 0x%x", 
 	// 	rpt_raw_val.accelerator_raw, rpt_raw_val.brake_raw, rpt_raw_val.clutch_raw);
 
+	// struct gamepad_report_out rpt = {
+	// 	.report_id = GAMEPAD_INPUT_REPORT_ID,
+	// 	.accelerator = 
+	// 		raw_to_uint16(rpt_raw_val.accelerator_raw, 
+	// 				ctx->calibration->offset[SETTING_INDEX_ACCELERATOR], 
+	// 				ctx->calibration->scale[SETTING_INDEX_ACCELERATOR]),
+	// 	.brake = raw_to_uint16(rpt_raw_val.brake_raw, 
+	// 				ctx->calibration->offset[SETTING_INDEX_BRAKE], 
+	// 				ctx->calibration->scale[SETTING_INDEX_BRAKE]),
+	// 	.clutch = raw_to_uint16(rpt_raw_val.clutch_raw, 
+	// 				ctx->calibration->offset[SETTING_INDEX_CLUTCH], 
+	// 				ctx->calibration->scale[SETTING_INDEX_CLUTCH]),
+	// };
+
+	uint16_t acc_tmp = 	raw_to_uint16(rpt_raw_val.accelerator_raw, 
+					ctx->calibration->offset[SETTING_INDEX_ACCELERATOR], 
+					ctx->calibration->scale[SETTING_INDEX_ACCELERATOR]);
+	uint16_t brake_tmp = 	raw_to_uint16(rpt_raw_val.brake_raw, 
+					ctx->calibration->offset[SETTING_INDEX_BRAKE], 
+					ctx->calibration->scale[SETTING_INDEX_BRAKE]);
+	uint16_t clutch_tmp = 	raw_to_uint16(rpt_raw_val.clutch_raw, 
+					ctx->calibration->offset[SETTING_INDEX_CLUTCH], 
+					ctx->calibration->scale[SETTING_INDEX_CLUTCH]);
+
+	//TODO: apply curve here
+	const struct gamepad_curve* curve = get_active_curve_slot();
+	uint16_t acc_final = curve_calculate(acc_tmp, curve->accelerator, GAMEPAD_FEATURE_REPORT_CURVE_NUM_POINTS);
+	uint16_t brake_final = curve_calculate(brake_tmp, curve->brake, GAMEPAD_FEATURE_REPORT_CURVE_NUM_POINTS);
+	uint16_t clutch_final = curve_calculate(clutch_tmp, curve->clutch, GAMEPAD_FEATURE_REPORT_CURVE_NUM_POINTS);
+
 	struct gamepad_report_out rpt = {
 		.report_id = GAMEPAD_INPUT_REPORT_ID,
-		.accelerator = 
-			raw_to_uint16(rpt_raw_val.accelerator_raw, 
-					ctx->calibration->offset[SETTING_INDEX_ACCELERATOR], 
-					ctx->calibration->scale[SETTING_INDEX_ACCELERATOR]),
-		.brake = raw_to_uint16(rpt_raw_val.brake_raw, 
-					ctx->calibration->offset[SETTING_INDEX_BRAKE], 
-					ctx->calibration->scale[SETTING_INDEX_BRAKE]),
-		.clutch = raw_to_uint16(rpt_raw_val.clutch_raw, 
-					ctx->calibration->offset[SETTING_INDEX_CLUTCH], 
-					ctx->calibration->scale[SETTING_INDEX_CLUTCH]),
+		.accelerator = acc_final,
+		.brake = brake_final,
+		.clutch = clutch_final,
 	};
+
 	//LOG_INF("gamepad report: accelerator = %d, brake = %d, clutch = %d",rpt.accelerator, rpt.brake, rpt.clutch);
 
 	// struct gamepad_report_out rpt = {

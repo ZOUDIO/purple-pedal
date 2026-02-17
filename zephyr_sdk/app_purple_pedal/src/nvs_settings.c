@@ -9,13 +9,24 @@ LOG_MODULE_REGISTER(nvs_settings, CONFIG_APP_LOG_LEVEL);
 #define SETTING_SUB_CALIBRATION "calib"
 
 #define SETTING_SUB_CURVE "curve"
-
 #define SETTING_SUB_CURVE_ACTIVE "active"
+#define SETTING_SUB_CURVE_SLOT "slot"
 
 #define SETTING_CALIBRATION SETTING_GAMEPAD_ROOT"/"SETTING_SUB_CALIBRATION
 #define SETTING_CURVE_ACTIVE SETTING_GAMEPAD_ROOT"/"SETTING_SUB_CURVE"/"SETTING_SUB_CURVE_ACTIVE
+#define SETTING_CURVE_SLOT SETTING_GAMEPAD_ROOT"/"SETTING_SUB_CURVE"/"SETTING_SUB_CURVE_SLOT
 
 #define SETTING_CALIBRATION_LEN (sizeof(struct gamepad_calibration))
+#define SETTING_CURVE_ACTIVE_LEN (SIZEOF_FIELD(struct gamepad_feature_rpt_active_curve, active_curve_slot))
+
+// static const char *SETTING_CURVE_SLOT_STRS[GAMEPAD_FEATURE_REPORT_CURVE_SLOT_NUM] = {
+// 	//Note: slot0 is the defaut slot that only lives in RAM
+// 	SETTING_CURVE_SLOT(1),
+// 	SETTING_CURVE_SLOT(2),
+// 	SETTING_CURVE_SLOT(3),
+// 	SETTING_CURVE_SLOT(4),
+// 	SETTING_CURVE_SLOT(5),
+// };
 
 static struct gamepad_calibration gp_calibration = {
     .offset = {[0 ... SETTING_INDEX_TOTAL-1] = LOAD_CELL_DEFAULT_OFFSET},
@@ -47,6 +58,35 @@ int gampepad_setting_handle_set(const char *name, size_t len, settings_read_cb r
 		}
 		return rc;
 	}
+
+	if (settings_name_steq(name, SETTING_SUB_CURVE"/"SETTING_SUB_CURVE_ACTIVE, &next) && !next) {
+		if (len != SETTING_CURVE_ACTIVE_LEN) {
+			return -EINVAL;
+		}
+		rc = read_cb(cb_arg, &gp_curve_ctx.active_curve_slot, SETTING_CURVE_ACTIVE_LEN);
+		if (rc >= 0) {
+			return 0;
+		}
+		return rc;
+	}
+
+	if(settings_name_steq(name, SETTING_SUB_CURVE"/"SETTING_SUB_CURVE_SLOT, &next) && next){
+		if(*next < '1' || *next > '5'){
+			return -EINVAL;
+		}
+		uint8_t slot = *next - '0';
+
+		if(len != sizeof(struct gamepad_curve)){
+			return -EINVAL;
+		}
+
+		rc = read_cb(cb_arg, &gp_curve_ctx.curve_slot[slot], sizeof(struct gamepad_curve));
+		if(rc >= 0){
+			return 0;
+		}
+		return rc;
+	}
+
     return -ENOENT;
 }
 
@@ -88,17 +128,23 @@ int set_calibration(const struct gamepad_calibration *calib)
 {
     int err = settings_save_one(SETTING_CALIBRATION, calib, SETTING_CALIBRATION_LEN);
     if(err) return err;
-    return settings_load_subtree(SETTING_GAMEPAD_ROOT);
+    return settings_load_subtree(SETTING_CALIBRATION);
 }
 
-int set_active_curve_slot(uint8_t slot)
+int set_active_curve(uint8_t slot)
 {
 	if(slot > GAMEPAD_FEATURE_REPORT_CURVE_SLOT_NUM){
 		return -EINVAL;
 	}
+	//TODO: shall we set to default slot0 value?
 	int err = settings_save_one(SETTING_CURVE_ACTIVE, &slot, sizeof(slot));
 	if(err) return err;
-	return settings_load_subtree(SETTING_GAMEPAD_ROOT);
+	return settings_load_subtree(SETTING_CURVE_ACTIVE);
+}
+
+uint8_t get_active_curve(void)
+{
+	return gp_curve_ctx.active_curve_slot;
 }
 
 int set_curve_slot(uint8_t slot_id, const struct gamepad_curve *curve)
@@ -107,11 +153,11 @@ int set_curve_slot(uint8_t slot_id, const struct gamepad_curve *curve)
 	if(slot == 0 || slot > GAMEPAD_FEATURE_REPORT_CURVE_SLOT_NUM){
 		return -EINVAL;
 	}
-	char setting_name[64];
-	snprintf(setting_name, sizeof(setting_name), SETTING_GAMEPAD_ROOT"/"SETTING_SUB_CURVE"/slot%d", slot);
+	char setting_name[sizeof(SETTING_CURVE_SLOT) + 2]; //+2 for / and slot number
+	snprintf(setting_name, sizeof(setting_name), SETTING_CURVE_SLOT"/""%d", slot);
 	int err = settings_save_one(setting_name, curve, sizeof(struct gamepad_curve));
 	if(err) return err;
-	return settings_load_subtree(SETTING_GAMEPAD_ROOT);
+	return settings_load_subtree(setting_name);
 }
 
 const struct gamepad_curve* get_curve_slot(uint8_t slot_id)

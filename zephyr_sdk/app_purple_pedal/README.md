@@ -491,13 +491,76 @@ Using STM32 ROM DFU we can read this:
 
 # 5 how to set /get curve values
 
-CONFIG_UDC_BUF_POOL_SIZE controls the maximum 
+## 5.1 Set curve data
+CONFIG_UDC_BUF_POOL_SIZE controls the maximum USB data size.
 
+curve data is defined as below:
+```c
+#define GAMEPAD_FEATURE_REPORT_CURVE_SLOT1_ID (0x11)
+#define GAMEPAD_FEATURE_REPORT_CURVE_SLOT2_ID (0x12)
+#define GAMEPAD_FEATURE_REPORT_CURVE_SLOT3_ID (0x13)
+#define GAMEPAD_FEATURE_REPORT_CURVE_SLOT4_ID (0x14)
+#define GAMEPAD_FEATURE_REPORT_CURVE_SLOT5_ID (0x15)
+
+#define GAMEPAD_FEATURE_REPORT_CURVE_NUM_POINTS (32)
+struct gamepad_curve{
+    uint16_t accelerator[GAMEPAD_FEATURE_REPORT_CURVE_NUM_POINTS]; 
+	uint16_t brake[GAMEPAD_FEATURE_REPORT_CURVE_NUM_POINTS]; 
+	uint16_t clutch[GAMEPAD_FEATURE_REPORT_CURVE_NUM_POINTS]; 
+}__packed __aligned(2);
+
+struct gamepad_feature_rpt_curve {
+	uint8_t report_id;
+	uint8_t : 8;
+	struct gamepad_curve curve;
+} __packed __aligned(2);
+```
+In total there are 5 slots.
+
+note that there is 1 dummy byte inserted in gamepad_feature_rpt_curve for byte alignment purpose.
+The total length of gamepad_feature_rpt_curve is 194 bytes:
+
+To read the curve at 
 ```sh
 .\hidapitester.exe --vidpid 0483/A575 --usagePage 0x1 --usage 0x04 --open --length 194 --read-feature 21
+Opening device, vid/pid:0x0483/0xA575, usagePage/usage: 1/4
+Device opened
+Reading 194-byte feature report, report_id 18...read 194 bytes:
+ 12 00 00 00 42 08 84 10 C6 18 08 21 4A 29 8C 31 CE 39 10 42 52 4A 94 52 D6 5A 18 63 5A 6B 9C 73
+ DE 7B 20 84 62 8C A4 94 E6 9C 28 A5 6A AD AC B5 EE BD 30 C6 72 CE B4 D6 F6 DE 38 E7 7A EF BC F7
+ FF FF 00 00 42 08 84 10 C6 18 08 21 4A 29 8C 31 CE 39 10 42 52 4A 94 52 D6 5A 18 63 5A 6B 9C 73
+ DE 7B 20 84 62 8C A4 94 E6 9C 28 A5 6A AD AC B5 EE BD 30 C6 72 CE B4 D6 F6 DE 38 E7 7A EF BC F7
+ FF FF 00 00 42 08 84 10 C6 18 08 21 4A 29 8C 31 CE 39 10 42 52 4A 94 52 D6 5A 18 63 5A 6B 9C 73
+ DE 7B 20 84 62 8C A4 94 E6 9C 28 A5 6A AD AC B5 EE BD 30 C6 72 CE B4 D6 F6 DE 38 E7 7A EF BC F7
+ FF FF
+Closing device
+```
+To write the curve data:
+```sh
+.\hidapitester.exe --vidpid 0483/A575 --usagePage 0x1 --usage 0x04 --open --send-feature 0x11,0x00,<curve data>
+```
+## 5.1 select which curve is used
+```c
+#define GAMEPAD_FEATURE_REPORT_ACTIVE_CURVE_ID (0x10)
+
+struct gamepad_feature_rpt_active_curve {
+	uint8_t report_id;
+	uint8_t active_curve_slot; //0 means no curve, 1-3 means curve slot 1-3
+} __packed;
 ```
 
-# 5. reference documents
+```sh
+.\hidapitester.exe --vidpid 0483/A575 --usagePage 0x1 --usage 0x04 --open --length 2 --read-feature 16
+```
+
+To set the curve data:
+```sh
+.\hidapitester.exe --vidpid 0483/A575 --usagePage 0x1 --usage 0x04 --open --send-feature 0x10,<selected slot, can be 0,1,2,3,4,5>
+```
+
+Note that in the serial shell, "settings" command is enabled, user can use this command to manipulate the saved settings.
+
+# 6. reference documents
 
 HID specification:
 

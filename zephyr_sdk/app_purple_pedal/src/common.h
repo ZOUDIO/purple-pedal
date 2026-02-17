@@ -142,8 +142,14 @@ int app_usb_init(void);
 int app_setting_init(void);
 const struct gamepad_calibration *get_calibration(void);
 int set_calibration(const struct gamepad_calibration *calib);
+
+uint8_t get_active_curve(void);
+int set_active_curve(uint8_t slot);
+
 const struct gamepad_curve* get_curve_slot(uint8_t slot_id);
+int set_curve_slot(uint8_t slot_id, const struct gamepad_curve *curve);
 const struct gamepad_curve* get_active_curve_slot(void);
+
 //void gamepad_set_status_led(const enum app_state state);
 void post_usb_event(struct usb_event event);
 

@@ -247,7 +247,8 @@ static int gamepad_get_report(const struct device *dev,const uint8_t type, const
 			return 0;
 		}
 		struct gamepad_feature_rpt_active_curve *rpt = (struct gamepad_feature_rpt_active_curve*)buf;
-		rpt->active_curve_slot = 123;
+		rpt->report_id = GAMEPAD_FEATURE_REPORT_ACTIVE_CURVE_ID;
+		rpt->active_curve_slot = get_active_curve();
 		return sizeof(struct gamepad_feature_rpt_active_curve);
 	}
 
@@ -270,21 +271,72 @@ static int gamepad_get_report(const struct device *dev,const uint8_t type, const
 
 static int gamepad_set_report(const struct device *dev, const uint8_t type, const uint8_t id, const uint16_t len, const uint8_t *const buf)
 {
-	if(type != HID_REPORT_TYPE_FEATURE || id != GAMEPAD_FEATURE_REPORT_CALIB_ID){
-		LOG_WRN("Set Report not implemented, Type %u ID %u", type, id);
+	// if(type != HID_REPORT_TYPE_FEATURE || id != GAMEPAD_FEATURE_REPORT_CALIB_ID){
+	// 	LOG_WRN("Set Report not implemented, Type %u ID %u", type, id);
+	// 	return 0;
+	// }
+
+	// if (len != sizeof(struct gamepad_feature_rpt_calib)){
+	// 	LOG_ERR("len %d does not equal to  sizeof(struct gamepad_feature_rpt_calib) %d",
+	// 			len, sizeof(struct gamepad_feature_rpt_calib));
+	// 	return 0;
+	// }
+	// struct gamepad_feature_rpt_calib *rpt = (struct gamepad_feature_rpt_calib *)buf;
+	// int err = set_calibration(&rpt->calib);
+	// if(err){
+	// 	LOG_ERR("set_calibration() returns %d", err);
+	// }
+	// return 0;
+
+	//note that this function is called from usb_thread
+	if(type != HID_REPORT_TYPE_FEATURE){
+		LOG_WRN("Get Report not implemented, Type %u ID %u", type, id);
 		return 0;
 	}
 
-	if (len != sizeof(struct gamepad_feature_rpt_calib)){
-		LOG_ERR("len %d does not equal to  sizeof(struct gamepad_feature_rpt_calib) %d",
-				len, sizeof(struct gamepad_feature_rpt_calib));
+	if(id == GAMEPAD_FEATURE_REPORT_CALIB_ID){
+		if (len != sizeof(struct gamepad_feature_rpt_calib)){
+			LOG_ERR("len %d does not equal to  sizeof(struct gamepad_feature_rpt_calib) %d",
+					len, sizeof(struct gamepad_feature_rpt_calib));
+			return 0;
+		}
+		struct gamepad_feature_rpt_calib *rpt = (struct gamepad_feature_rpt_calib *)buf;
+		int err = set_calibration(&rpt->calib);
+		if(err){
+			LOG_ERR("set_calibration() returns %d", err);
+		}
 		return 0;
 	}
-	struct gamepad_feature_rpt_calib *rpt = (struct gamepad_feature_rpt_calib *)buf;
-	int err = set_calibration(&rpt->calib);
-	if(err){
-		LOG_ERR("set_calibration() returns %d", err);
+
+	if(id == GAMEPAD_FEATURE_REPORT_ACTIVE_CURVE_ID){
+		if (len != sizeof(struct gamepad_feature_rpt_active_curve)){
+			LOG_ERR("len %d does not equal to  sizeof(struct gamepad_feature_rpt_active_curve) %d",
+					len, sizeof(struct gamepad_feature_rpt_active_curve));
+			return 0;
+		}
+		struct gamepad_feature_rpt_active_curve *rpt = (struct gamepad_feature_rpt_active_curve *)buf;
+		int err = set_active_curve(rpt->active_curve_slot);
+		if(err){
+			LOG_ERR("set_active_curve() returns %d", err);
+		}
+		return 0;
 	}
+
+	if(id >= GAMEPAD_FEATURE_REPORT_CURVE_SLOT1_ID && id <= GAMEPAD_FEATURE_REPORT_CURVE_SLOT5_ID){
+		if(len < sizeof(struct gamepad_feature_rpt_curve)){
+			LOG_ERR("len %d <  sizeof(struct gamepad_feature_rpt_curve) %d", 
+				len, sizeof(struct gamepad_feature_rpt_curve));
+			return 0;
+		}
+		struct gamepad_feature_rpt_curve *rpt = (struct gamepad_feature_rpt_curve*)buf;
+		int err = set_curve_slot(id, &rpt->curve);
+		if(err){
+			LOG_ERR("set_curve_slot() returns %d", err);
+		}
+		return 0;
+	}
+
+	LOG_WRN("Set Report not implemented, Type %u ID %u", type, id);
 	return 0;
 }
 

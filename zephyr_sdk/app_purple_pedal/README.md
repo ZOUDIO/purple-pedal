@@ -1,6 +1,17 @@
 # 1. Purple Pedal Application
 
 ## 1.1 Build the application
+
+After initializing workspace with west init and west update, call below command to apply the zephyr patches.
+
+We need some ad7124 driver modification to include the features needed by PurplePedal.
+
+```shell
+west patch apply
+```
+
+To build the application:
+
 ```shell
 west build -b purple_pedal --sysbuild zephyr_sdk/app_purple_pedal
 
@@ -555,10 +566,10 @@ struct gamepad_feature_rpt_active_curve {
 
 To set the curve data:
 ```sh
-.\hidapitester.exe --vidpid 0483/A575 --usagePage 0x1 --usage 0x04 --open --send-feature 0x10,<selected slot, can be 0,1,2,3,4,5>
+.\hidapitester.exe --vidpid 0483/A575 --usagePage 0x1 --usage 0x04 --open --send-feature 0x10, <selected slot, can be 0,1,2,3,4,5>
 ```
 
-Note that in the serial shell, "settings" command is enabled, user can use this command to manipulate the saved settings.
+Note that in the serial shell, "settings" command is enabled, user can use this command to manipulate all the saved settings.
 
 # 6. reference documents
 

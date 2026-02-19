@@ -1,0 +1,47 @@
+diff --git a/drivers/adc/adc_ad7124.c b/drivers/adc/adc_ad7124.c
+index c8ed66541e0..01858e77c63 100644
+--- a/drivers/adc/adc_ad7124.c
++++ b/drivers/adc/adc_ad7124.c
+@@ -727,6 +727,11 @@ static int adc_ad7124_setup_cfg(const struct device *dev, const struct ad7124_ch
+ 	configuration_setup |= FIELD_PREP(AD7124_SETUP_CONF_PGA_MSK, cfg->props.pga_bits);
+ 	configuration_mask |= AD7124_SETUP_CONFIGURATION_MASK;
+ 
++	//added by Shan to give default burnout current.
++#define AD7124_SETUP_CONF_BURNOUT_MSK         GENMASK(10, 9)
++	configuration_setup |= FIELD_PREP(AD7124_SETUP_CONF_BURNOUT_MSK, 0x1); //01 = burnout current source on, 0.5 μA.
++	configuration_mask |= AD7124_SETUP_CONFIGURATION_MASK;
++
+ 	ret = adc_ad7124_reg_write_msk(dev, AD7124_CONFIG(cfg->cfg_slot), AD7124_CONFIG_REG_LEN,
+ 				       configuration_setup, configuration_mask);
+ 	if (ret) {
+@@ -754,9 +759,14 @@ static int adc_ad7124_filter_cfg(const struct device *dev, const struct ad7124_c
+ 	int filter_mask = 0;
+ 	int ret;
+ 
++	// filter_setup = FIELD_PREP(AD7124_FILTER_CONF_REG_FILTER_MSK, cfg->props.filter_type) |
++	// 	       FIELD_PREP(AD7124_FILTER_FS_MSK, cfg->props.odr_sel_bits);
++	// filter_mask = AD7124_FILTER_CONF_REG_FILTER_MSK | AD7124_FILTER_FS_MSK;
++
+ 	filter_setup = FIELD_PREP(AD7124_FILTER_CONF_REG_FILTER_MSK, cfg->props.filter_type) |
+-		       FIELD_PREP(AD7124_FILTER_FS_MSK, cfg->props.odr_sel_bits);
+-	filter_mask = AD7124_FILTER_CONF_REG_FILTER_MSK | AD7124_FILTER_FS_MSK;
++		       FIELD_PREP(AD7124_FILTER_FS_MSK, cfg->props.odr_sel_bits) |
++			   FIELD_PREP(GENMASK(16, 16), 1);
++	filter_mask = AD7124_FILTER_CONF_REG_FILTER_MSK | AD7124_FILTER_FS_MSK | GENMASK(16, 16);
+ 
+ 	/* Set filter type and odr*/
+ 	ret = adc_ad7124_reg_write_msk(dev, AD7124_FILTER(cfg->cfg_slot), AD7124_FILTER_REG_LEN,
+@@ -1366,11 +1376,12 @@ static int adc_ad7124_read(const struct device *dev, const struct adc_sequence *
+ 	adc_context_lock(&data->ctx, false, NULL);
+ 
+ 	status = adc_ad7124_start_read(dev, sequence, false);
+-
++	//int64_t begin = k_uptime_get();
+ 	while (status == 0 && k_sem_take(&data->ctx.sync, K_NO_WAIT) != 0) {
+ 		status = adc_ad7124_perform_read(dev);
+ 	}
+ 
++	//LOG_DBG("adc time: %d ms", (int32_t)(k_uptime_get()-begin));
+ 	adc_context_release(&data->ctx, status);
+ 
+ 	return status;

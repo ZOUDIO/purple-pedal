@@ -1,0 +1,10 @@
+patches:
+  - path: zephyr/ad7124_driver.patch
+    sha256sum: 90e8e031c94d4bba5c2bb9aadb2ff0af1eb4a35615d2bd6444a3b7612375b492
+    module: zephyr
+    author: Shan Song
+    email: borlandkylix@gmail.com
+    date: 2026-02-19
+    upstreamable: false
+    comments: |
+      Patch AD7124 driver to support features needed by purple pedal
